@@ -1,0 +1,95 @@
+{
+ "id": "coreOsEgiWhatsapp",
+ "name": "Core OS · WhatsApp → Cérebro",
+ "active": false,
+ "nodes": [
+  {
+   "id": "a1",
+   "name": "Mensagem chegou (Evolution)",
+   "type": "n8n-nodes-base.webhook",
+   "typeVersion": 2,
+   "position": [
+    0,
+    0
+   ],
+   "webhookId": "core-os-whatsapp",
+   "parameters": {
+    "httpMethod": "POST",
+    "path": "core-os-whatsapp",
+    "responseMode": "onReceived",
+    "options": {}
+   }
+  },
+  {
+   "id": "a2",
+   "name": "Conversa individual?",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    260,
+    0
+   ],
+   "parameters": {
+    "jsCode": "// Repassa pro painel toda mensagem de conversa individual (grupo, status e canal ficam de fora).\n// Quem decide quem pode dar ordens é o painel (Configurações › WhatsApp), então trocar número não mexe aqui.\n// Respostas do cérebro no chat \"Você\" começam com um caractere invisível (⁣) e são ignoradas (sem loop).\nconst saida = [];\nfor (const item of $input.all()) {\n  const b = item.json.body || item.json;\n  const d = b.data || {};\n  const chave = d.key || {};\n  const remoto = String(chave.remoteJid || '');\n  if (!remoto || remoto.endsWith('@g.us') || remoto.endsWith('@broadcast') || remoto.endsWith('@newsletter')) continue;\n  const chat = [chave.remoteJidAlt, chave.senderPn, remoto].find((j) => String(j || '').endsWith('@s.whatsapp.net')) || '';\n  if (!chat) continue;\n  const m = d.message || {};\n  const texto = m.conversation || m.extendedTextMessage?.text || '';\n  if (texto.startsWith('⁣')) continue;\n  const tipo = texto ? 'texto' : (d.messageType === 'audioMessage' ? 'audio' : 'outro');\n  if (tipo === 'outro' && /reaction|protocol|senderKey|edited|poll|sticker/i.test(String(d.messageType))) continue;\n  saida.push({ json: { texto, tipo, deMim: Boolean(chave.fromMe), chat, eu: String(b.sender || '') } });\n}\nreturn saida;"
+   }
+  },
+  {
+   "id": "a3",
+   "name": "Manda pro Claude Code",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    520,
+    0
+   ],
+   "parameters": {
+    "method": "POST",
+    "url": "{{PAINEL_URL}}/api/ponte/whatsapp",
+    "sendHeaders": true,
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "x-core-os-token",
+       "value": "{{HOOK_TOKEN}}"
+      }
+     ]
+    },
+    "sendBody": true,
+    "specifyBody": "json",
+    "jsonBody": "={{ JSON.stringify({ texto: $json.texto, tipo: $json.tipo, deMim: $json.deMim, chat: $json.chat, eu: $json.eu }) }}",
+    "options": {}
+   }
+  }
+ ],
+ "connections": {
+  "Mensagem chegou (Evolution)": {
+   "main": [
+    [
+     {
+      "node": "Conversa individual?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Conversa individual?": {
+   "main": [
+    [
+     {
+      "node": "Manda pro Claude Code",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  }
+ },
+ "settings": {
+  "executionOrder": "v1",
+  "saveDataSuccessExecution": "none",
+  "saveManualExecutions": false
+ },
+ "pinData": {},
+ "versionId": "8fe189dd-d820-4ae9-b872-51854a425b54"
+}

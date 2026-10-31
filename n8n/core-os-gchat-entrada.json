@@ -1,0 +1,175 @@
+{
+ "id": "coreOsEgiGchatIn",
+ "name": "Core OS · Google Chat → Cérebro",
+ "nodes": [
+  {
+   "id": "w1",
+   "name": "Evento do Google Chat",
+   "type": "n8n-nodes-base.webhook",
+   "typeVersion": 2,
+   "position": [
+    0,
+    0
+   ],
+   "webhookId": "core-os-gchat",
+   "parameters": {
+    "httpMethod": "POST",
+    "path": "core-os-gchat",
+    "responseMode": "responseNode",
+    "options": {}
+   }
+  },
+  {
+   "id": "c1",
+   "name": "Interpreta evento",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    260,
+    0
+   ],
+   "parameters": {
+    "jsCode": "// Transforma o evento do Google Chat (app HTTP) no formato da ponte do Core OS.\n// Só MESSAGE vira pedido. ADDED_TO_SPACE responde boas-vindas; o resto é ignorado.\n// Mapeie salas pra especialistas aqui: nome da sala (space.displayName) ou id (spaces/AAAA) → agente em .claude/agents/.\nconst SALA_AGENTE = {\n  // 'SDR': 'sdr',\n  // 'spaces/AAAAxxxxxxx': 'sdr',\n};\nconst saida = [];\nfor (const item of $input.all()) {\n  const b = item.json.body || item.json;\n  // Chat API nova manda em b.chat.messagePayload; a antiga em b.message\n  const ev = b.chat?.messagePayload || b;\n  const tipo = b.type || (b.chat?.messagePayload ? 'MESSAGE' : b.chat?.addedToSpacePayload ? 'ADDED_TO_SPACE' : '');\n  const msg = ev.message || {};\n  const space = ev.space || msg.space || {};\n  const user = (b.chat?.user) || ev.user || msg.sender || {};\n  const texto = String(msg.argumentText ?? msg.text ?? '').trim();\n  const thread = msg.thread?.name || '';\n  const chave = thread || space.name || 'gchat';\n  const agente = SALA_AGENTE[space.displayName] || SALA_AGENTE[space.name] || '';\n  saida.push({ json: {\n    tipo, texto, chave, agente,\n    de: String(user.email || user.name || ''), nome: String(user.displayName || ''),\n    space: space.name || '', spaceNome: space.displayName || '', thread, threadKey: thread.split('/').pop() || '',\n    ack: tipo === 'ADDED_TO_SPACE' ? 'Oi! Sou o cérebro do Core OS. Me manda o que precisa; pra começar conversa nova, escreva /nova.' : '⏳',\n  } });\n}\nreturn saida;"
+   }
+  },
+  {
+   "id": "r1",
+   "name": "Responde na hora (ack)",
+   "type": "n8n-nodes-base.respondToWebhook",
+   "typeVersion": 1.1,
+   "position": [
+    520,
+    0
+   ],
+   "parameters": {
+    "respondWith": "json",
+    "responseBody": "={{ JSON.stringify($json.tipo === 'MESSAGE' || $json.tipo === 'ADDED_TO_SPACE' ? { text: $json.ack, thread: $json.thread ? { name: $json.thread } : undefined } : {}) }}",
+    "options": {}
+   }
+  },
+  {
+   "id": "f1",
+   "name": "É mensagem?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2,
+   "position": [
+    780,
+    0
+   ],
+   "parameters": {
+    "conditions": {
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "strict"
+     },
+     "conditions": [
+      {
+       "id": "x1",
+       "leftValue": "={{ $json.tipo }}",
+       "rightValue": "MESSAGE",
+       "operator": {
+        "type": "string",
+        "operation": "equals"
+       }
+      },
+      {
+       "id": "x2",
+       "leftValue": "={{ $json.texto }}",
+       "rightValue": "",
+       "operator": {
+        "type": "string",
+        "operation": "notEmpty",
+        "singleValue": true
+       }
+      }
+     ],
+     "combinator": "and"
+    },
+    "options": {}
+   }
+  },
+  {
+   "id": "h1",
+   "name": "Manda pro cérebro",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    1040,
+    -80
+   ],
+   "parameters": {
+    "method": "POST",
+    "url": "{{PAINEL_URL}}/api/ponte/canal",
+    "sendHeaders": true,
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "x-core-os-token",
+       "value": "{{HOOK_TOKEN}}"
+      }
+     ]
+    },
+    "sendBody": true,
+    "specifyBody": "json",
+    "jsonBody": "={{ JSON.stringify({ canal: 'gchat', chave: $json.chave, de: $json.de, nome: $json.nome, texto: $json.texto, agente: $json.agente || undefined, callback: '{{N8N_URL}}/webhook/core-os-gchat-resposta', meta: { space: $json.space, spaceNome: $json.spaceNome, thread: $json.thread, threadKey: $json.threadKey } }) }}",
+    "options": {
+     "timeout": 30000
+    }
+   }
+  }
+ ],
+ "connections": {
+  "Evento do Google Chat": {
+   "main": [
+    [
+     {
+      "node": "Interpreta evento",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Interpreta evento": {
+   "main": [
+    [
+     {
+      "node": "Responde na hora (ack)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Responde na hora (ack)": {
+   "main": [
+    [
+     {
+      "node": "É mensagem?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "É mensagem?": {
+   "main": [
+    [
+     {
+      "node": "Manda pro cérebro",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    []
+   ]
+  }
+ },
+ "settings": {
+  "executionOrder": "v1",
+  "saveDataSuccessExecution": "none",
+  "saveManualExecutions": false
+ },
+ "pinData": {}
+}

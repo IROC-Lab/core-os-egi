@@ -1,0 +1,37 @@
+# Core OS · EGI — recurso "Docker Compose" no Coolify.
+# No Coolify: New Resource > Docker Compose (a partir deste repositório Git) ou Dockerfile.
+# Defina as variáveis em "Environment Variables" e o domínio (ex.: cerebro.appegi.com.br) apontando pra porta 3000.
+services:
+  cerebro:
+    build: .
+    container_name: core-os-cerebro
+    restart: unless-stopped
+    environment:
+      # --- obrigatórias ---
+      CORE_OS_PASSWORD: ${CORE_OS_PASSWORD}          # senha do painel (min. 8 chars)
+      CORE_OS_HOOK_TOKEN: ${CORE_OS_HOOK_TOKEN}      # token n8n -> painel (openssl rand -hex 24)
+      EVO_KEY: ${EVO_KEY}                            # apikey global da sua Evolution
+      # --- seus serviços já existentes ---
+      EVO_URL: ${EVO_URL:-https://evo.appegi.com.br}
+      EVO_INSTANCE: ${EVO_INSTANCE:-cerebro}         # instância do WhatsApp do cérebro (nova ou já existente)
+      N8N_URL: ${N8N_URL:-https://n8n.appegi.com.br}
+      CORE_OS_PUBLIC_URL: ${CORE_OS_PUBLIC_URL:-https://cerebro.appegi.com.br}
+      # --- opcionais ---
+      CORE_OS_NOME: ${CORE_OS_NOME:-Iuri}
+      WHATS_DONO: ${WHATS_DONO:-}                    # 55DDDNUMERO que pode dar ordens pelo WhatsApp
+      GCHAT_PERMITIDOS: ${GCHAT_PERMITIDOS:-}        # e-mails ou @dominio.com separados por vírgula
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}      # vazio = login com a assinatura (claude /login)
+      TZ: America/Sao_Paulo
+    volumes:
+      - cerebro-dados:/data                 # cérebro (.md, skills, agentes) + dados do painel
+      - cerebro-claude:/home/coreos/.claude # login do Claude Code + histórico das sessões
+    expose:
+      - "3000"
+    # Se o Coolify NÃO criar a label de porta sozinho, descomente:
+    # labels:
+    #   - coolify.managed=true
+    #   - traefik.http.services.core-os-cerebro.loadbalancer.server.port=3000
+
+volumes:
+  cerebro-dados:
+  cerebro-claude:

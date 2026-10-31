@@ -1,0 +1,128 @@
+{
+ "id": "coreOsEgiGchatOut",
+ "name": "Core OS · Cérebro → Google Chat",
+ "nodes": [
+  {
+   "id": "w2",
+   "name": "Resposta do cérebro",
+   "type": "n8n-nodes-base.webhook",
+   "typeVersion": 2,
+   "position": [
+    0,
+    0
+   ],
+   "webhookId": "core-os-gchat-resposta",
+   "parameters": {
+    "httpMethod": "POST",
+    "path": "core-os-gchat-resposta",
+    "responseMode": "onReceived",
+    "options": {}
+   }
+  },
+  {
+   "id": "f2",
+   "name": "Token confere?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2,
+   "position": [
+    260,
+    0
+   ],
+   "parameters": {
+    "conditions": {
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "strict"
+     },
+     "conditions": [
+      {
+       "id": "t1",
+       "leftValue": "={{ $json.headers['x-core-os-token'] }}",
+       "rightValue": "{{HOOK_TOKEN}}",
+       "operator": {
+        "type": "string",
+        "operation": "equals"
+       }
+      }
+     ],
+     "combinator": "and"
+    },
+    "options": {}
+   }
+  },
+  {
+   "id": "c2",
+   "name": "Monta envio",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    520,
+    0
+   ],
+   "parameters": {
+    "jsCode": "// Recebe a resposta do cérebro e monta o POST pro webhook de entrada (Incoming Webhook) da sala no Google Chat.\n// Cadastre aqui cada sala: id da sala (meta.space, ex. 'spaces/AAAAxxxx') ou nome → URL do webhook de entrada.\n// (Google Chat > sala > Apps e integrações > Webhooks > Adicionar.)\nconst WEBHOOKS = {\n  // 'spaces/AAAAxxxxxxx': 'https://chat.googleapis.com/v1/spaces/AAAAxxxxxxx/messages?key=...&token=...',\n  // 'Comercial': 'https://chat.googleapis.com/v1/spaces/.../messages?key=...&token=...',\n};\nconst saida = [];\nfor (const item of $input.all()) {\n  const b = item.json.body || item.json;\n  const meta = b.meta || {};\n  let url = WEBHOOKS[meta.space] || WEBHOOKS[meta.spaceNome] || '';\n  if (!url) { throw new Error(`Sem webhook cadastrado pra sala ${meta.spaceNome || meta.space}. Edite o nó \"Monta envio\".`); }\n  // responde na mesma thread; se a sala não tiver threads, cai pra mensagem nova\n  url += (url.includes('?') ? '&' : '?') + 'messageReplyOption=REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD';\n  const corpo = { text: String(b.texto || '').slice(0, 4000) };\n  if (meta.thread) corpo.thread = { name: meta.thread };\n  saida.push({ json: { url, corpo } });\n}\nreturn saida;"
+   }
+  },
+  {
+   "id": "h2",
+   "name": "Posta no Google Chat",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    780,
+    0
+   ],
+   "parameters": {
+    "method": "POST",
+    "url": "={{ $json.url }}",
+    "sendBody": true,
+    "specifyBody": "json",
+    "jsonBody": "={{ JSON.stringify($json.corpo) }}",
+    "options": {}
+   }
+  }
+ ],
+ "connections": {
+  "Resposta do cérebro": {
+   "main": [
+    [
+     {
+      "node": "Token confere?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Token confere?": {
+   "main": [
+    [
+     {
+      "node": "Monta envio",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    []
+   ]
+  },
+  "Monta envio": {
+   "main": [
+    [
+     {
+      "node": "Posta no Google Chat",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  }
+ },
+ "settings": {
+  "executionOrder": "v1",
+  "saveDataSuccessExecution": "none",
+  "saveManualExecutions": false
+ },
+ "pinData": {}
+}

@@ -1,0 +1,23 @@
+{
+  "name": "core-os-painel",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Painel web do Core OS: segundo cérebro no navegador com conversas reais do Claude Code.",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@homebridge/node-pty-prebuilt-multiarch": "0.13.1",
+    "@xterm/addon-fit": "0.10.0",
+    "@xterm/addon-unicode11": "^0.8.0",
+    "@xterm/xterm": "5.5.0",
+    "express": "5.1.0",
+    "marked": "16.4.1",
+    "ws": "8.18.3"
+  }
+}

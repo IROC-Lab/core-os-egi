@@ -1,0 +1,7 @@
+node_modules/
+painel/node_modules/
+painel/data/
+n8n/pronto/
+.env
+*.log
+.DS_Store

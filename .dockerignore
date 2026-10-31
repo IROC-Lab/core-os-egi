@@ -1,0 +1,5 @@
+painel/node_modules
+painel/data
+n8n/pronto
+.git
+*.log

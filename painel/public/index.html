@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Core OS</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%230071e3'/%3E%3Ccircle cx='32' cy='32' r='13' fill='none' stroke='white' stroke-width='5'/%3E%3Ccircle cx='32' cy='32' r='4' fill='white'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/vendor/xterm/css/xterm.css">
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <div id="login" class="login" hidden>
+    <form class="login-card vidro" id="form-login">
+      <div class="marca"><span class="marca-icone"></span><span>Core OS</span></div>
+      <p class="login-sub">Seu segundo cérebro, ligado 24 horas.</p>
+      <input id="senha" type="password" placeholder="Senha" autocomplete="current-password" autofocus>
+      <button type="submit" class="botao-primario">Entrar</button>
+      <p class="login-erro" id="login-erro"></p>
+    </form>
+  </div>
+
+  <div id="app" hidden>
+    <div id="palco" class="palco">
+      <div id="mundo" class="mundo">
+        <svg id="ligacoes" class="ligacoes" width="1" height="1"></svg>
+      </div>
+    </div>
+
+    <aside id="arvore" class="painel-lateral vidro">
+      <header class="painel-topo">
+        <span class="painel-titulo">Arquivos</span>
+        <button class="icone-botao" data-acao="recarregar-arvore" title="Recarregar"></button>
+      </header>
+      <nav id="arvore-lista" class="arvore-lista"></nav>
+    </aside>
+
+    <aside id="conversas" class="conversas">
+      <header class="conversas-topo">
+        <span class="painel-titulo">Conversas</span>
+        <button class="icone-botao" data-acao="nova-conversa" title="Nova conversa"></button>
+      </header>
+      <section id="comece" class="comece vidro"></section>
+      <div id="conversas-lista" class="conversas-lista"></div>
+    </aside>
+
+    <nav id="dock" class="dock vidro">
+      <button data-acao="arvore" data-dica="Árvore"></button>
+      <button data-acao="grafo" data-dica="Grafo"></button>
+      <button data-acao="nova-conversa" data-dica="Nova conversa"></button>
+      <button data-acao="conteudos" data-dica="Conteúdos"></button>
+      <span class="dock-separador"></span>
+      <button data-acao="centralizar" data-dica="Centralizar"></button>
+      <button data-acao="tema" data-dica="Tema"></button>
+      <button data-acao="config" data-dica="Configurações"></button>
+      <button data-acao="sair" data-dica="Sair"></button>
+    </nav>
+
+ <section id="grafo" class="grafo" hidden>
+      <canvas id="grafo-tela"></canvas>
+      <div class="grafo-legenda vidro"><span><i class="bolinha pasta"></i>pasta</span><span><i class="bolinha nota"></i>nota</span><span><i class="bolinha midia"></i>mídia</span></div>
+      <div id="grafo-rotulo" class="grafo-rotulo vidro" hidden></div>
+    </section>
+
+    <section id="escolher-motor" class="seletor" hidden>
+      <div class="seletor-fundo" data-acao="fechar-seletor"></div>
+      <div class="seletor-caixa vidro">
+        <h2>Nova conversa</h2>
+        <p>Quem vai trabalhar nela? Cada um roda de verdade neste servidor, com o seu login.</p>
+        <div id="seletor-motores" class="seletor-motores"></div>
+      </div>
+    </section>
+
+    <section id="folha-config" class="folha" hidden>
+      <div class="folha-fundo" data-acao="fechar-config"></div>
+      <div class="folha-corpo folha-estreita">
+        <header class="folha-topo">
+          <div><h2>Configurações</h2><p>Os canais que o seu cérebro usa pra falar com o mundo.</p></div>
+          <button class="icone-botao" data-acao="fechar-config" title="Fechar"></button>
+        </header>
+        <div id="config-corpo" class="config-corpo"></div>
+      </div>
+    </section>
+
+    <div id="zoom-indicador" class="zoom-indicador vidro">100%</div>
+
+    <section id="folha-conteudos" class="folha" hidden>
+      <div class="folha-fundo folha-fundo-simples" data-acao="fechar-conteudos"></div>
+      <div class="folha-corpo" id="conteudos-corpo">
+        <header class="folha-topo">
+          <div class="folha-cabeca">
+            <button class="icone-botao voltar" data-acao="conteudos-voltar" title="Voltar" hidden></button>
+            <div>
+              <p class="migalha" id="conteudos-migalha" hidden></p>
+              <h2 id="conteudos-titulo">Conteúdos</h2>
+              <p id="conteudos-sub">Tudo que o cérebro gerou, organizado por pasta.</p>
+            </div>
+          </div>
+          <div class="folha-acoes">
+            <button class="botao-leve" data-acao="enviar-arquivos"><span class="ic-enviar"></span>Enviar arquivos</button>
+            <button class="icone-botao" data-acao="fechar-conteudos" title="Fechar"></button>
+          </div>
+        </header>
+        <div id="grade-conteudos" class="grade-conteudos"></div>
+        <div class="soltar-aqui" id="soltar-aqui"><div><span class="ic-enviar"></span><b>Solte pra enviar ao servidor</b><small id="soltar-destino"></small></div></div>
+      </div>
+      <input type="file" id="entrada-arquivos" multiple hidden>
+    </section>
+
+    <section id="visor" class="visor" hidden>
+      <div class="visor-fundo" data-acao="fechar-visor"></div>
+      <header class="visor-topo">
+        <div class="visor-titulo"><b id="visor-nome"></b><span id="visor-info"></span></div>
+        <div class="visor-acoes">
+          <a id="visor-baixar" class="botao-leve" download><span class="ic-baixar"></span>Baixar</a>
+          <button class="icone-botao redondo" data-acao="fechar-visor" title="Fechar (Esc)"></button>
+        </div>
+      </header>
+      <button class="visor-nav ant" data-acao="visor-ant" title="Anterior (←)"></button>
+      <div id="visor-palco" class="visor-palco"></div>
+      <button class="visor-nav prox" data-acao="visor-prox" title="Próximo (→)"></button>
+    </section>
+
+    <div id="envio" class="envio vidro" hidden></div>
+  </div>
+
+  <script src="/vendor/xterm/lib/xterm.js"></script>
+  <script src="/vendor/xterm-fit/lib/addon-fit.js"></script>
+  <script src="/vendor/xterm-unicode/lib/addon-unicode11.js"></script>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
