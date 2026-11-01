@@ -77,6 +77,8 @@ Cria a instância `cerebro` (se não existir), aponta o webhook `MESSAGES_UPSERT
 
 Teste: mande "oi, o que tem no meu cérebro?" pro número conectado.
 
+**Áudio**: o fluxo do WhatsApp transcreve áudio antes de entregar ao cérebro (Evolution → Groq Whisper → texto com 🎤). Crie no n8n duas credenciais *Header Auth*: `Evolution EGI (apikey)` (nome `apikey`, valor = apikey global) e `Groq (Whisper)` (nome `Authorization`, valor `Bearer gsk_...`, chave grátis em console.groq.com), e selecione-as nos nós "Baixa áudio" e "Transcreve".
+
 ### 5. Google Chat
 Precisa de um **app do Google Chat** (quem recebe as mensagens) e, pra responder, um **webhook de entrada** em cada sala (mais simples que conta de serviço).
 

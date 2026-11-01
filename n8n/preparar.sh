@@ -22,3 +22,5 @@ Webhooks que o n8n vai expor:
   Resposta (o painel chama):       $N8N/webhook/core-os-gchat-resposta
 Nunca suba a pasta pronto/ pro Git (tem o token).
 FIM
+# Áudio no WhatsApp: o fluxo usa 2 credenciais "Header Auth" no n8n: "Evolution EGI (apikey)" (header apikey) e "Groq (Whisper)" (header Authorization: Bearer ...).
+# Crie as duas no n8n antes de importar e, se quiser, passe os ids em CRED_EVOLUTION_ID / CRED_GROQ_ID; senão, selecione na mão nos nós "Baixa áudio" e "Transcreve".

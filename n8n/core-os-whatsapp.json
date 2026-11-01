@@ -1,6 +1,6 @@
 {
  "id": "coreOsEgiWhatsapp",
- "name": "Core OS · WhatsApp → Cérebro",
+ "name": "Core OS · WhatsApp → Cérebro (com áudio)",
  "active": false,
  "nodes": [
   {
@@ -30,7 +30,146 @@
     0
    ],
    "parameters": {
-    "jsCode": "// Repassa pro painel toda mensagem de conversa individual (grupo, status e canal ficam de fora).\n// Quem decide quem pode dar ordens é o painel (Configurações › WhatsApp), então trocar número não mexe aqui.\n// Respostas do cérebro no chat \"Você\" começam com um caractere invisível (⁣) e são ignoradas (sem loop).\nconst saida = [];\nfor (const item of $input.all()) {\n  const b = item.json.body || item.json;\n  const d = b.data || {};\n  const chave = d.key || {};\n  const remoto = String(chave.remoteJid || '');\n  if (!remoto || remoto.endsWith('@g.us') || remoto.endsWith('@broadcast') || remoto.endsWith('@newsletter')) continue;\n  const chat = [chave.remoteJidAlt, chave.senderPn, remoto].find((j) => String(j || '').endsWith('@s.whatsapp.net')) || '';\n  if (!chat) continue;\n  const m = d.message || {};\n  const texto = m.conversation || m.extendedTextMessage?.text || '';\n  if (texto.startsWith('⁣')) continue;\n  const tipo = texto ? 'texto' : (d.messageType === 'audioMessage' ? 'audio' : 'outro');\n  if (tipo === 'outro' && /reaction|protocol|senderKey|edited|poll|sticker/i.test(String(d.messageType))) continue;\n  saida.push({ json: { texto, tipo, deMim: Boolean(chave.fromMe), chat, eu: String(b.sender || '') } });\n}\nreturn saida;"
+    "jsCode": "// Repassa pro painel toda mensagem de conversa individual (grupo, status e canal ficam de fora).\n// Quem decide quem pode dar ordens é o painel (Configurações › WhatsApp), então trocar número não mexe aqui.\n// Respostas do cérebro no chat \"Você\" começam com um caractere invisível (⁣) e são ignoradas (sem loop).\nconst saida = [];\nfor (const item of $input.all()) {\n  const b = item.json.body || item.json;\n  const d = b.data || {};\n  const chave = d.key || {};\n  const remoto = String(chave.remoteJid || '');\n  if (!remoto || remoto.endsWith('@g.us') || remoto.endsWith('@broadcast') || remoto.endsWith('@newsletter')) continue;\n  const chat = [chave.remoteJidAlt, chave.senderPn, remoto].find((j) => String(j || '').endsWith('@s.whatsapp.net')) || '';\n  if (!chat) continue;\n  const m = d.message || {};\n  const texto = m.conversation || m.extendedTextMessage?.text || '';\n  if (texto.startsWith('⁣')) continue;\n  const ehAudio = d.messageType === 'audioMessage' || Boolean(m.audioMessage);\n  const tipo = texto ? 'texto' : (ehAudio ? 'audio' : 'outro');\n  if (tipo === 'outro' && /reaction|protocol|senderKey|edited|poll|sticker/i.test(String(d.messageType))) continue;\n  saida.push({ json: { texto, tipo, deMim: Boolean(chave.fromMe), chat, eu: String(b.sender || ''), msgId: String(chave.id || ''), remoteJid: remoto, fromMe: Boolean(chave.fromMe) } });\n}\nreturn saida;"
+   }
+  },
+  {
+   "id": "f1",
+   "name": "É áudio?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2,
+   "position": [
+    520,
+    0
+   ],
+   "parameters": {
+    "conditions": {
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "strict"
+     },
+     "conditions": [
+      {
+       "id": "c1",
+       "leftValue": "={{ $json.tipo }}",
+       "rightValue": "audio",
+       "operator": {
+        "type": "string",
+        "operation": "equals"
+       }
+      }
+     ],
+     "combinator": "and"
+    },
+    "options": {}
+   }
+  },
+  {
+   "id": "b1",
+   "name": "Baixa áudio (Evolution)",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    800,
+    -160
+   ],
+   "credentials": {
+    "httpHeaderAuth": {
+     "id": "{{CRED_EVOLUTION_ID}}",
+     "name": "Evolution EGI (apikey)"
+    }
+   },
+   "parameters": {
+    "method": "POST",
+    "url": "{{EVO_URL}}/chat/getBase64FromMediaMessage/{{EVO_INSTANCE}}",
+    "authentication": "genericCredentialType",
+    "genericAuthType": "httpHeaderAuth",
+    "sendBody": true,
+    "specifyBody": "json",
+    "jsonBody": "={{ JSON.stringify({ message: { key: { id: $json.msgId, remoteJid: $json.remoteJid, fromMe: $json.fromMe } }, convertToMp4: false }) }}",
+    "options": {
+     "timeout": 60000
+    }
+   }
+  },
+  {
+   "id": "b2",
+   "name": "Vira arquivo",
+   "type": "n8n-nodes-base.convertToFile",
+   "typeVersion": 1.1,
+   "position": [
+    1060,
+    -160
+   ],
+   "parameters": {
+    "operation": "toBinary",
+    "sourceProperty": "base64",
+    "options": {
+     "fileName": "audio.ogg",
+     "mimeType": "audio/ogg"
+    }
+   }
+  },
+  {
+   "id": "b3",
+   "name": "Transcreve (Groq Whisper)",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    1320,
+    -160
+   ],
+   "credentials": {
+    "httpHeaderAuth": {
+     "id": "{{CRED_GROQ_ID}}",
+     "name": "Groq (Whisper)"
+    }
+   },
+   "parameters": {
+    "method": "POST",
+    "url": "https://api.groq.com/openai/v1/audio/transcriptions",
+    "authentication": "genericCredentialType",
+    "genericAuthType": "httpHeaderAuth",
+    "sendBody": true,
+    "contentType": "multipart-form-data",
+    "bodyParameters": {
+     "parameters": [
+      {
+       "parameterType": "formBinaryData",
+       "name": "file",
+       "inputDataFieldName": "data"
+      },
+      {
+       "name": "model",
+       "value": "whisper-large-v3"
+      },
+      {
+       "name": "language",
+       "value": "pt"
+      },
+      {
+       "name": "response_format",
+       "value": "json"
+      }
+     ]
+    },
+    "options": {
+     "timeout": 120000
+    }
+   }
+  },
+  {
+   "id": "b4",
+   "name": "Vira texto",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    1580,
+    -160
+   ],
+   "parameters": {
+    "jsCode": "// Junta a transcrição com os dados da mensagem original e manda como texto.\nconst orig = $('Conversa individual?').first().json;\nconst t = String($json.text || '').trim();\nreturn [{ json: { texto: t ? '🎤 ' + t : '', tipo: t ? 'texto' : 'audio', deMim: orig.deMim, chat: orig.chat, eu: orig.eu } }];"
    }
   },
   {
@@ -39,7 +178,7 @@
    "type": "n8n-nodes-base.httpRequest",
    "typeVersion": 4.2,
    "position": [
-    520,
+    1840,
     0
    ],
    "parameters": {
@@ -74,6 +213,68 @@
    ]
   },
   "Conversa individual?": {
+   "main": [
+    [
+     {
+      "node": "É áudio?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "É áudio?": {
+   "main": [
+    [
+     {
+      "node": "Baixa áudio (Evolution)",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Manda pro Claude Code",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Baixa áudio (Evolution)": {
+   "main": [
+    [
+     {
+      "node": "Vira arquivo",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Vira arquivo": {
+   "main": [
+    [
+     {
+      "node": "Transcreve (Groq Whisper)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Transcreve (Groq Whisper)": {
+   "main": [
+    [
+     {
+      "node": "Vira texto",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Vira texto": {
    "main": [
     [
      {
