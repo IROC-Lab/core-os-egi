@@ -9,7 +9,9 @@ PAINEL="${1:?PAINEL_URL (ex. https://cerebro.appegi.com.br)}"; N8N="${2:?N8N_URL
 PAINEL="${PAINEL%/}"; N8N="${N8N%/}"
 mkdir -p "$AQUI/pronto"
 for f in core-os-whatsapp core-os-gchat-entrada core-os-gchat-resposta; do
-  sed -e "s|{{PAINEL_URL}}|$PAINEL|g" -e "s|{{N8N_URL}}|$N8N|g" -e "s|{{HOOK_TOKEN}}|$TOKEN|g" "$AQUI/$f.json" >"$AQUI/pronto/$f.json"
+  sed -e "s|{{PAINEL_URL}}|$PAINEL|g" -e "s|{{N8N_URL}}|$N8N|g" -e "s|{{HOOK_TOKEN}}|$TOKEN|g" \
+      -e "s|{{EVO_URL}}|${EVO_URL:-https://evo.appegi.com.br}|g" -e "s|{{EVO_INSTANCE}}|${EVO_INSTANCE:-cerebro}|g" \
+      -e "s|{{CRED_EVOLUTION_ID}}|${CRED_EVOLUTION_ID:-}|g" -e "s|{{CRED_GROQ_ID}}|${CRED_GROQ_ID:-}|g" "$AQUI/$f.json" >"$AQUI/pronto/$f.json"
   python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$AQUI/pronto/$f.json"
   echo "✓ pronto/$f.json"
 done
