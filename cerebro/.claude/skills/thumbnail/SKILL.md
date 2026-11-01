@@ -15,4 +15,4 @@ description: Gera thumbnail de vídeo do YouTube a partir do roteiro e de uma re
 ## Nunca
 - Cabeça cortada, mão segurando ícone, logo solto com seta apontando pro nada, fonte inventada.
 
-Exemplo pronto: `conteudo/thumbnails/stack-ia-2026/`.
+A primeira thumb que você fizer vira a referência de estilo das próximas.
