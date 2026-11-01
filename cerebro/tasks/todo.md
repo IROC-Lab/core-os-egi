@@ -2,8 +2,6 @@
 > Fonte única de tarefas. Alimentado pela captura e pelo /save.
 
 ## Esta semana
-- [ ] Gravar o reels do carrossel de NotebookLM
-- [ ] Testar a thumb 20-so-me-copie contra a 03b no YouTube
+- [ ] Preencher comercial/oferta.md (o que vendemos, pra quem, faixa de preço, objeções) antes de ligar o SDR
 
 ## Concluídas
-- [x] 2026-10-27: Core OS instalado na VPS
