@@ -83,7 +83,7 @@ function aplicarCamera(mostrarZoom) {
   mundo.style.transform = `translate(${x}px, ${y}px) scale(${z})`;
   palco.style.backgroundPosition = `${x}px ${y}px`;
   palco.style.backgroundSize = `${22 * z}px ${22 * z}px`;
-  const e = espaco(); e.cam = S.cam; salvarEspaco(e);
+  const e = espaco(); e.cam = { x, y, z, vw: innerWidth, vh: innerHeight }; salvarEspaco(e);
   if (mostrarZoom) {
     const ind = $('#zoom-indicador'); ind.textContent = `${Math.round(z * 100)}%`; ind.classList.add('visivel');
     clearTimeout(aplicarCamera.t); aplicarCamera.t = setTimeout(() => ind.classList.remove('visivel'), 900);
@@ -105,6 +105,7 @@ function centralizarEm(rect, zMax = 1) {
   aplicarCamera(true);
   setTimeout(() => { mundo.style.transition = ''; }, 650);
 }
+addEventListener('resize', () => { clearTimeout(centralizarTudo.t); centralizarTudo.t = setTimeout(centralizarTudo, 250); });
 function centralizarTudo() {
   const cards = [...mundo.querySelectorAll('.card, .boas-vindas')];
   if (!cards.length) return;
@@ -318,7 +319,8 @@ function desenharEspaco() {
     desenharFilhos(conv);
   }
   for (const c of e.abertos) cardArquivo(c, 0, 0);
-  if (e.cam) { S.cam = e.cam; aplicarCamera(); } else setTimeout(centralizarTudo, 60);
+  // câmera salva só vale pro mesmo tamanho de janela; senão recentraliza (evita card embaixo dos painéis)
+  if (e.cam && e.cam.vw === innerWidth && e.cam.vh === innerHeight) { S.cam = { x: e.cam.x, y: e.cam.y, z: e.cam.z }; aplicarCamera(); } else setTimeout(centralizarTudo, 60);
   desenharLigacoes();
   pintarConversas();
 }
