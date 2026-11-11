@@ -15,8 +15,8 @@ CASA=/home/coreos
 log() { printf '\033[1;34m[core-os]\033[0m %s\n' "$*"; }
 
 # volumes do Coolify nascem como root: devolve pro coreos
-mkdir -p "$DADOS" "$(dirname "$VAULT")" "$CASA/.claude"
-chown -R coreos:coreos /data "$CASA/.claude" 2>/dev/null || true
+mkdir -p "$DADOS" "$(dirname "$VAULT")" "$CASA/.claude" "$CASA/.codex" "$CASA/.gemini"
+chown -R coreos:coreos /data "$CASA/.claude" "$CASA/.codex" "$CASA/.gemini" 2>/dev/null || true
 
 # --- 1. .env que o painel e as skills leem --------------------------------------
 : "${CORE_OS_PASSWORD:?Defina CORE_OS_PASSWORD no Coolify (senha do painel).}"
@@ -29,6 +29,7 @@ chown -R coreos:coreos /data "$CASA/.claude" 2>/dev/null || true
 : "${GCHAT_PERMITIDOS:=}"
 : "${WHATS_DONO:=}"
 : "${ANTHROPIC_API_KEY:=}"
+: "${OPENAI_API_KEY:=}"
 
 umask 027
 {
@@ -48,6 +49,7 @@ umask 027
   echo "GCHAT_PERMITIDOS=$GCHAT_PERMITIDOS"
   [ -n "$WHATS_DONO" ] && echo "WHATS_DONO=$(echo "$WHATS_DONO" | tr -cd '0-9')"
   [ -n "$ANTHROPIC_API_KEY" ] && echo "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY"
+  [ -n "$OPENAI_API_KEY" ] && echo "OPENAI_API_KEY=$OPENAI_API_KEY"
   echo "TZ=${TZ:-America/Sao_Paulo}"
 } >"$ENV_FILE"
 chown root:coreos "$ENV_FILE"; chmod 640 "$ENV_FILE"
@@ -94,6 +96,6 @@ fi
 
 # --- 5. painel ------------------------------------------------------------------
 cd "$BASE/painel"
-export HOME=$CASA CORE_OS_ENV=$ENV_FILE PATH=$CASA/.local/bin:$PATH
+export HOME=$CASA CORE_OS_ENV=$ENV_FILE CODEX_HOME=$CASA/.codex PATH=$CASA/.local/bin:$PATH
 log "subindo o painel na porta ${CORE_OS_PORT:-3000}"
 exec gosu coreos node server.js

@@ -443,7 +443,7 @@ async function escolherMotor() {
     <button class="motor-opcao ${m.instalado ? '' : 'falta'}" data-acao="${m.instalado ? 'abrir-motor' : 'instalar-motor'}" data-motor="${id}">
       <img src="/logos/${id}.svg" alt="" width="40" height="40">
       <b>${esc(m.nome)}</b><span>${esc(MOTORES_UI[id]?.empresa || '')}</span>
-      <em>${m.instalado ? (mot.padrao === id ? 'Último usado' : 'Pronto') : 'Não instalado · instalar'}</em>
+      <em>${!m.instalado ? 'Não instalado · instalar' : m.logado === false ? 'Fazer login' : mot.padrao === id ? 'Último usado' : 'Pronto'}</em>
     </button>`).join('');
   $('#escolher-motor').hidden = false;
 }
@@ -468,8 +468,10 @@ async function encerrar(c) {
 }
 
 async function atualizarEstado() {
+  if (!Array.isArray(S.conversas)) S.conversas = [];
   const antes = JSON.stringify(S.conversas.map((c) => [c.id, c.motor, c.titulo, c.nota, c.trabalhando, c.ativo, c.ultimaAcao, c.subagentes, c.midias]));
-  S.conversas = await api('/api/estado');
+  const estado = await api('/api/estado').catch(() => null);
+  if (Array.isArray(estado)) S.conversas = estado; // resposta estranha (deploy, 502): mantém a lista anterior
   const ativa = S.conversas.find((c) => c.id === S.ativa);
   if (ativa?.origem && ativa.origem !== 'painel' && !assumidas.has(ativa.id)) pintarHistorico(ativa).catch(() => {});
   const depois = JSON.stringify(S.conversas.map((c) => [c.id, c.motor, c.titulo, c.nota, c.trabalhando, c.ativo, c.ultimaAcao, c.subagentes, c.midias]));

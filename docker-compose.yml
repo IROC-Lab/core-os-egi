@@ -20,10 +20,13 @@ services:
       WHATS_DONO: ${WHATS_DONO:-}                    # 55DDDNUMERO que pode dar ordens pelo WhatsApp
       GCHAT_PERMITIDOS: ${GCHAT_PERMITIDOS:-}        # e-mails ou @dominio.com separados por vírgula
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}      # vazio = login com a assinatura (claude /login)
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}            # vazio = login com a conta ChatGPT (device code) no Codex
       TZ: America/Sao_Paulo
     volumes:
       - cerebro-dados:/data                 # cérebro (.md, skills, agentes) + dados do painel
       - cerebro-claude:/home/coreos/.claude # login do Claude Code + histórico das sessões
+      - cerebro-codex:/home/coreos/.codex   # login do Codex (OpenAI) + sessões
+      - cerebro-gemini:/home/coreos/.gemini # login do Antigravity (Google) + conversas
     expose:
       - "3000"
     # Se o Coolify NÃO criar a label de porta sozinho, descomente:
@@ -34,3 +37,5 @@ services:
 volumes:
   cerebro-dados:
   cerebro-claude:
+  cerebro-codex:
+  cerebro-gemini:

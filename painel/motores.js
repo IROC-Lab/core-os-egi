@@ -17,12 +17,12 @@ export const MOTORES = {
   codex: {
     nome: 'Codex',
     bin: process.env.CODEX_BIN || 'codex',
-    login: 'No terminal do servidor: codex login --device-auth (conta ChatGPT) ou OPENAI_API_KEY no /opt/core-os/.env.',
+    login: 'Na primeira conversa o painel abre o login por código (conta ChatGPT), ou use OPENAI_API_KEY no Coolify.',
   },
   antigravity: {
     nome: 'Antigravity',
     bin: process.env.AGY_BIN || 'agy',
-    login: 'No terminal do servidor: rode agy e siga o link com código (conta Google) ou GEMINI_API_KEY no /opt/core-os/.env.',
+    login: 'Na primeira conversa o painel mostra o link de login da conta Google; cole o código no terminal.',
   },
 };
 export const motorDe = (conv) => (MOTORES[conv?.motor] ? conv.motor : 'claude');
@@ -35,10 +35,20 @@ export function caminhoBin(id) {
   for (const p of PASTAS) { const f = path.join(p, bin); try { fs.accessSync(f, fs.constants.X_OK); return f; } catch { /* */ } }
   return null;
 }
-export const disponiveis = () => Object.fromEntries(Object.entries(MOTORES).map(([id, m]) => [id, { nome: m.nome, instalado: Boolean(caminhoBin(id)), login: m.login }]));
+export const disponiveis = () => Object.fromEntries(Object.entries(MOTORES).map(([id, m]) => [id, { nome: m.nome, instalado: Boolean(caminhoBin(id)), logado: logado(id), login: m.login }]));
 
 // texto vira string TOML (o Codex lê -c chave=valor como TOML)
 const toml = (s) => JSON.stringify(String(s));
+
+// ---------- login (fica salvo nos volumes ~/.codex e ~/.gemini) ----------
+const CODEX_HOME = process.env.CODEX_HOME || path.join(casa, '.codex');
+const temArquivo = (f) => { try { return fs.statSync(f).size > 0; } catch { return false; } };
+export function logado(id) {
+  if (id === 'codex') return temArquivo(path.join(CODEX_HOME, 'auth.json'));
+  if (id === 'antigravity') return temArquivo(path.join(casa, '.gemini', 'antigravity-cli', 'antigravity-oauth-token'));
+  return true; // o Claude Code faz o próprio login na tela
+}
+const sh = (s) => `'${String(s).replace(/'/g, `'\\''`)}'`;
 
 // ---------- terminal (uma conversa interativa) ----------
 export function comandoTerminal(conv, { prompt, jaTemClaude }) {
@@ -46,11 +56,21 @@ export function comandoTerminal(conv, { prompt, jaTemClaude }) {
   const bin = caminhoBin(id) || MOTORES[id].bin;
   if (id === 'codex') {
     const base = ['-c', `developer_instructions=${toml(prompt)}`, '--sandbox', 'workspace-write', '--ask-for-approval', 'on-request'];
-    return { bin, args: conv.sessaoMotor ? ['resume', ...base, conv.sessaoMotor] : base };
+    const args = conv.sessaoMotor ? ['resume', ...base, conv.sessaoMotor] : base;
+    if (logado('codex')) return { bin, args };
+    // sem login: o "Sign in with ChatGPT" do Codex abre um localhost que não existe no servidor.
+    // Usa chave (se houver) ou o login por código (device auth), e só depois abre o Codex.
+    const entrar = process.env.OPENAI_API_KEY
+      ? `printenv OPENAI_API_KEY | ${sh(bin)} login --with-api-key`
+      : `echo; echo '  Login do Codex: abra o link abaixo no seu navegador, entre com a conta ChatGPT e digite o código.'; echo; ${sh(bin)} login --device-auth`;
+    return { bin: 'bash', args: ['-c', `${entrar} && exec ${sh(bin)} ${args.map(sh).join(' ')} || { echo; echo '  Login não concluído. Feche esta conversa e abra outra pra tentar de novo.'; sleep 3600; }`] };
   }
   if (id === 'antigravity') {
     // o agy não tem flag de prompt de sistema: a regra vem do AGENTS.md + variável CORE_OS_SESSAO
-    return { bin, args: conv.sessaoMotor ? ['--conversation', conv.sessaoMotor] : conv.iniciouTerminal ? ['--continue'] : [] };
+    const args = conv.sessaoMotor ? ['--conversation', conv.sessaoMotor] : conv.iniciouTerminal ? ['--continue'] : [];
+    if (logado('antigravity')) return { bin, args };
+    // sem login: o agy não tem "login"; o 1º pedido mostra um link e espera o código colado (~30s)
+    return { bin: 'bash', args: ['-c', `echo; echo '  Login do Antigravity: abra o link que vai aparecer, entre com a conta Google e cole o código aqui (tem uns 30 segundos).'; echo; ${sh(bin)} -p 'Responda só: ok' && exec ${sh(bin)} ${args.map(sh).join(' ')} || { echo; echo '  Login não concluído. Feche esta conversa e abra outra pra tentar de novo.'; sleep 3600; }`] };
   }
   return { bin, args: [jaTemClaude ? '--resume' : '--session-id', conv.id, '--append-system-prompt', prompt] };
 }
