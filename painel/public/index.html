@@ -2,7 +2,15 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1c1c1e" media="(prefers-color-scheme: dark)">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Core OS">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/icones/apple-touch-icon.png">
   <title>Core OS</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%230071e3'/%3E%3Ccircle cx='32' cy='32' r='13' fill='none' stroke='white' stroke-width='5'/%3E%3Ccircle cx='32' cy='32' r='4' fill='white'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="/vendor/xterm/css/xterm.css">
@@ -44,12 +52,13 @@
     </aside>
 
     <nav id="dock" class="dock vidro">
+      <button data-acao="conversas" data-dica="Conversas" class="so-movel"></button>
       <button data-acao="arvore" data-dica="Árvore"></button>
       <button data-acao="grafo" data-dica="Grafo"></button>
       <button data-acao="nova-conversa" data-dica="Nova conversa"></button>
       <button data-acao="conteudos" data-dica="Conteúdos"></button>
       <span class="dock-separador"></span>
-      <button data-acao="centralizar" data-dica="Centralizar"></button>
+      <button data-acao="centralizar" data-dica="Centralizar" class="so-desktop"></button>
       <button data-acao="tema" data-dica="Tema"></button>
       <button data-acao="config" data-dica="Configurações"></button>
       <button data-acao="sair" data-dica="Sair"></button>

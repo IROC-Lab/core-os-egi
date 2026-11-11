@@ -820,7 +820,10 @@ app.use('/vendor/xterm', express.static(vendor('@xterm/xterm')));
 app.use('/vendor/xterm-fit', express.static(vendor('@xterm/addon-fit')));
 app.use('/vendor/marked', express.static(vendor('marked')));
 app.use('/vendor/xterm-unicode', express.static(vendor('@xterm/addon-unicode11')));
-app.use(express.static(path.join(AQUI, 'public')));
+app.use(express.static(path.join(AQUI, 'public'), {
+  // PWA: o service worker e o manifesto nunca ficam presos em cache (deploy novo aparece na hora)
+  setHeaders: (res, f) => { if (/(sw\.js|manifest\.webmanifest)$/.test(f)) res.set('Cache-Control', 'no-cache'); },
+}));
 
 // ---------- websocket dos terminais ----------
 const servidor = createServer(app);

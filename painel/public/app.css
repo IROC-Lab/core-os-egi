@@ -185,10 +185,13 @@ svg.i { width: 18px; height: 18px; flex: none; stroke: currentColor; fill: none;
 .filhos { padding-left: 14px; }
 
 /* ---------- conversas (direita, sanfona centralizada) ---------- */
-.conversas { position: fixed; right: 16px; top: 50%; transform: translateY(-50%); width: 316px; max-height: calc(100vh - 140px);
-  display: flex; flex-direction: column; z-index: 10; }
-.conversas-topo { padding: 0 4px 8px 6px; }
-.conversas-lista { overflow: auto; display: flex; flex-direction: column; gap: 8px; padding: 2px; min-height: 0; }
+.conversas { position: fixed; right: 16px; top: 16px; bottom: 96px; width: 316px;
+  display: flex; flex-direction: column; justify-content: safe center; z-index: 10; overflow-y: auto; overscroll-behavior: contain;
+  scrollbar-width: thin; padding: 2px 4px 8px; margin-right: -4px; }
+/* nada encolhe: com muitas conversas a coluna inteira rola, em vez de espremer a lista */
+.conversas > * { flex: none; }
+.conversas-topo { padding: 0 4px 8px 6px; position: sticky; top: -2px; z-index: 1; }
+.conversas-lista { display: flex; flex-direction: column; gap: 8px; padding: 2px; }
 .conversas-lista > * { flex: none; }
 .conversa { border-radius: 18px; overflow: hidden; transition: box-shadow .3s; cursor: pointer; }
 .conversa.aberta { cursor: default; box-shadow: 0 0 0 2px var(--selecao), var(--sombra), var(--especular); }
@@ -473,3 +476,49 @@ img.selo-motor { width: 14px; height: 14px; padding: 0; border: 0; border-radius
 .comece-icone { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; flex: none; color: #fff; background: var(--acento); }
 .comece-item:first-child .comece-icone, .comece-lista li:nth-child(-n+4) .comece-icone { background: #25d366; }
 .comece-icone svg.i { width: 15px; height: 15px; }
+
+/* ---------- celular / PWA (≤ 760px): uma tela por vez ---------- */
+.so-movel { display: none !important; }
+body.movel .so-movel { display: grid !important; }
+body.movel .so-desktop, body.movel .dock-separador, body.movel .zoom-indicador { display: none !important; }
+html, body { overscroll-behavior: none; }
+body.movel { --topo-seguro: env(safe-area-inset-top, 0px); --base-segura: env(safe-area-inset-bottom, 0px); --dock-alt: calc(66px + var(--base-segura)); }
+
+/* dock vira barra fixa embaixo */
+body.movel .dock { left: 0; right: 0; bottom: 0; transform: none; border-radius: 20px 20px 0 0; justify-content: space-around; gap: 0;
+  padding: 6px 6px calc(6px + var(--base-segura)); }
+body.movel .dock button { width: 42px; height: 42px; }
+body.movel .dock button:hover { transform: none; }
+body.movel .dock button[data-dica]:hover::before { display: none; }
+body.movel.teclado .dock { display: none; }
+
+/* árvore e conversas: telas cheias por cima do terminal */
+body.movel .painel-lateral { left: 0; right: 0; top: 0; bottom: var(--dock-alt); width: auto; z-index: 25; border-radius: 0;
+  padding-top: var(--topo-seguro); background: var(--fundo); backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: none; }
+body.movel .no { height: 38px; }
+body.movel .conversas { display: none; left: 0; right: 0; top: 0; bottom: var(--dock-alt); width: auto; margin: 0; z-index: 25;
+  padding: calc(14px + var(--topo-seguro)) 12px 16px; background: var(--fundo); }
+body.movel.ver-conversas .conversas { display: flex; justify-content: flex-start; }
+body.movel .conversas-topo { background: var(--fundo); padding: 4px 4px 10px 6px; }
+body.movel .conversas-topo .icone-botao { width: 36px; height: 36px; }
+
+/* cards (terminal, arquivos): ocupam a tela; o mais recente fica por cima */
+body.movel .palco { background-image: none; }
+body.movel .mundo { transform: none !important; transition: none !important; will-change: auto; }
+body.movel .card { left: 6px !important; top: calc(6px + var(--topo-seguro)) !important; width: calc(100vw - 12px) !important;
+  height: calc(var(--altura, 100dvh) - var(--dock-alt) - 12px - var(--topo-seguro)) !important; border-radius: 16px; }
+body.movel.teclado .card { height: calc(var(--altura, 100dvh) - 12px - var(--topo-seguro)) !important; }
+body.movel .card-topo { cursor: default; }
+body.movel .boas-vindas { position: fixed !important; left: 16px !important; right: 16px; top: 50% !important; transform: translateY(-60%);
+  width: auto; padding: 28px 22px; }
+body.movel .ligacoes { display: none; }
+
+/* toques confortáveis e sem zoom automático ao digitar no iPhone */
+body.movel input, body.movel textarea, body.movel select { font-size: 16px; }
+body.movel .seletor { place-items: end center; padding: 0; }
+body.movel .seletor-caixa { border-radius: 24px 24px 0 0; padding: 22px 16px calc(18px + var(--base-segura)); max-height: 90dvh; overflow: auto; }
+body.movel .seletor-motores { grid-template-columns: 1fr; }
+body.movel .folha-corpo { width: 100vw; height: calc(100dvh - 40px - var(--topo-seguro)); margin: 0; border-radius: 24px 24px 0 0; }
+body.movel .folha-topo { padding: 18px 16px 10px; }
+body.movel .grade-conteudos { padding: 6px 16px calc(24px + var(--base-segura)); }
+body.movel .grupo-itens { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }

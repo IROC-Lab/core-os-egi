@@ -5,6 +5,7 @@ import { marked } from '/vendor/marked/lib/marked.esm.js';
 const P = {
   arvore: '<path d="M3 5.5h6M3 5.5v13M3 12h6M3 18.5h6"/><rect x="12" y="3" width="9" height="5" rx="1.6"/><rect x="12" y="9.5" width="9" height="5" rx="1.6"/><rect x="12" y="16" width="9" height="5" rx="1.6"/>',
   mais: '<path d="M12 5v14M5 12h14"/>',
+  conversas: '<path d="M20 11.5a7.5 7.5 0 0 1-11 6.6L4 19.5l1.4-4.3A7.5 7.5 0 1 1 20 11.5z"/><path d="M9 10h7M9 13.5h4.5"/>',
   conversaNova: '<path d="M20 11.5a7.5 7.5 0 0 1-11 6.6L4 19.5l1.4-4.3A7.5 7.5 0 1 1 20 11.5z"/><path d="M12.5 8.5v6M9.5 11.5h6"/>',
   grade: '<rect x="3.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.8"/>',
   mira: '<circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>',
@@ -72,6 +73,32 @@ const S = {
   terminais: new Map(), // id -> { term, fit, ws, elemento }
   cam: { x: 0, y: 0, z: 1 },
 };
+// ---------- celular (≤ 760px): uma tela por vez, sem canvas infinito ----------
+const mqMovel = matchMedia('(max-width: 760px)');
+const movel = () => mqMovel.matches;
+function ajustarMovel() {
+  document.body.classList.toggle('movel', movel());
+  if (!movel()) document.body.classList.remove('ver-conversas', 'teclado');
+}
+function verConversas(abrir) {
+  if (!movel()) return;
+  const v = abrir ?? !document.body.classList.contains('ver-conversas');
+  document.body.classList.toggle('ver-conversas', v);
+  if (v) $('#arvore')?.classList.add('fechado');
+  pintarDock();
+}
+// teclado do celular aberto: o terminal usa a altura visível de verdade e o dock some
+function ajustarAltura() {
+  const vv = window.visualViewport;
+  const h = vv ? vv.height : innerHeight;
+  document.documentElement.style.setProperty('--altura', `${h}px`);
+  document.body.classList.toggle('teclado', movel() && h < innerHeight * 0.78);
+}
+ajustarMovel(); ajustarAltura();
+mqMovel.addEventListener('change', () => { ajustarMovel(); desenharEspaco(); });
+window.visualViewport?.addEventListener('resize', ajustarAltura);
+addEventListener('resize', ajustarAltura);
+
 const espaco = () => recuperar(`espaco:${S.ativa}`, { pos: {}, abertos: [], cam: null });
 const salvarEspaco = (e) => guardar(`espaco:${S.ativa}`, e);
 
@@ -79,6 +106,7 @@ const salvarEspaco = (e) => guardar(`espaco:${S.ativa}`, e);
 const palco = $('#palco');
 const mundo = $('#mundo');
 function aplicarCamera(mostrarZoom) {
+  if (movel()) { S.cam = { x: 0, y: 0, z: 1 }; mostrarZoom = false; }
   const { x, y, z } = S.cam;
   mundo.style.transform = `translate(${x}px, ${y}px) scale(${z})`;
   palco.style.backgroundPosition = `${x}px ${y}px`;
@@ -96,6 +124,7 @@ function zoomEm(px, py, fator) {
   aplicarCamera(true);
 }
 function centralizarEm(rect, zMax = 1) {
+  if (movel()) { aplicarCamera(); return; }
   const larg = innerWidth - 360 - (aberta('arvore') ? 300 : 0);
   const alt = innerHeight - 140;
   const z = Math.min(zMax, larg / (rect.w + 120), alt / (rect.h + 120));
@@ -127,6 +156,7 @@ palco.addEventListener('wheel', (e) => {
 
 palco.addEventListener('pointerdown', (e) => {
   if (e.target !== palco && e.target !== mundo) return;
+  if (movel()) return;
   document.activeElement?.blur();
   const ini = { x: e.clientX, y: e.clientY, cx: S.cam.x, cy: S.cam.y };
   palco.classList.add('arrastando'); palco.setPointerCapture(e.pointerId);
@@ -158,6 +188,7 @@ function arrastavel(card) {
   topo.addEventListener('pointerdown', (e) => {
     if (e.target.closest('button')) return;
     card.style.zIndex = ++zTopo;
+    if (movel()) return; // no celular os cards ocupam a tela toda: só traz pra frente
     const ini = { x: e.clientX, y: e.clientY, l: parseFloat(card.style.left), t: parseFloat(card.style.top) };
     topo.setPointerCapture(e.pointerId);
     const mover = (m) => {
@@ -207,9 +238,10 @@ function cardArquivo(caminho, x, y) {
 }
 
 function abrirArquivo(caminho) {
+  if (movel()) { $('#arvore').classList.add('fechado'); pintarDock(); }
   const e = espaco();
   const jaTem = mundo.querySelector(`.card[data-chave="${CSS.escape(`arq:${caminho}`)}"]`);
-  if (jaTem) { focarCard(jaTem); centralizarEm({ x: parseFloat(jaTem.style.left), y: parseFloat(jaTem.style.top), w: jaTem.offsetWidth, h: jaTem.offsetHeight }); return; }
+  if (jaTem) { focarCard(jaTem); jaTem.style.zIndex = ++zTopo; centralizarEm({ x: parseFloat(jaTem.style.left), y: parseFloat(jaTem.style.top), w: jaTem.offsetWidth, h: jaTem.offsetHeight }); return; }
   if (!e.abertos.includes(caminho)) e.abertos.push(caminho);
   const cx = (innerWidth / 2 - S.cam.x) / S.cam.z - 250 + (e.abertos.length % 5) * 24;
   const cy = (innerHeight / 2 - S.cam.y) / S.cam.z - 300 + (e.abertos.length % 5) * 24;
@@ -229,7 +261,7 @@ function terminalDe(conv) {
   const elemento = el('div');
   elemento.style.height = '100%';
   const term = new Terminal({
-    fontFamily: '"SF Mono", Menlo, "DejaVu Sans Mono", Consolas, monospace', fontSize: 13, lineHeight: 1.15, letterSpacing: 0, cursorBlink: true, allowProposedApi: true, scrollback: 5000,
+    fontFamily: '"SF Mono", Menlo, "DejaVu Sans Mono", Consolas, monospace', fontSize: movel() ? 11.5 : 13, lineHeight: 1.15, letterSpacing: 0, cursorBlink: true, allowProposedApi: true, scrollback: 5000,
     theme: { background: '#1c1c1e', foreground: '#f5f5f7', cursor: '#0a84ff', selectionBackground: 'rgba(10,132,255,.35)' },
   });
   const fit = new FitAddon.FitAddon();
@@ -384,7 +416,8 @@ async function pintarComece() {
   const caixa = $('#comece');
   const testes = await api('/api/primeiros-testes').catch(() => []);
   if (!testes.length) { caixa.hidden = true; return; }
-  const fechado = recuperar('comeceFechado', false);
+  // sem escolha salva: começa fechado quando já tem conversa (pra lista não ficar espremida)
+  const fechado = recuperar('comeceFechado', null) ?? S.conversas.length > 0;
   caixa.classList.toggle('fechado', fechado);
   caixa.innerHTML = `<button class="comece-topo" data-acao="comece-alternar"><span>${ic('raio')} Comece aqui</span>${ic('seta')}</button>
     <ul class="comece-lista">${testes.map((t) => `<li><button class="comece-item" data-acao="pedir" data-pedido="${esc(t.pedido)}">
@@ -417,9 +450,10 @@ function pintarConversas() {
         <div class="conversa-botoes"><button class="botao-leve" data-focar>${ic('focar')} Focar</button><button class="botao-leve" data-encerrar>${ic('parar')} Encerrar</button></div>
       </div></div></div>`;
     bloco.addEventListener('click', (ev) => {
-      if (ev.target.closest('[data-focar]')) { focarTerminal(); return; }
+      if (ev.target.closest('[data-focar]')) { if (!aberta) trocarPara(c.id); verConversas(false); focarTerminal(); return; }
       if (ev.target.closest('[data-encerrar]')) { encerrar(c); return; }
       if (!aberta) trocarPara(c.id);
+      verConversas(false); // no celular, escolher a conversa leva direto pro terminal
     });
     lista.append(bloco);
   }
@@ -428,6 +462,7 @@ function trocarPara(id) { S.ativa = id; guardar('ativa', id); desenharEspaco(); 
 function focarTerminal() {
   const c = mundo.querySelector('.card[data-chave="terminal"]');
   if (!c) return;
+  if (movel()) { c.style.zIndex = ++zTopo; setTimeout(() => S.terminais.get(S.ativa)?.term.focus(), 100); return; }
   centralizarEm({ x: parseFloat(c.style.left), y: parseFloat(c.style.top), w: c.offsetWidth, h: c.offsetHeight });
   setTimeout(() => S.terminais.get(S.ativa)?.term.focus(), 400);
 }
@@ -452,6 +487,7 @@ const fecharSeletor = () => { $('#escolher-motor').hidden = true; };
 async function novaConversa(pedido, motor) {
   if (Grafo.aberto) Grafo.fechar();
   fecharSeletor();
+  verConversas(false);
   // o pedido (se houver) é escrito pelo servidor na caixa do agente, sem enviar: a pessoa lê e aperta Enter
   const corpo = { cols: 104, rows: 30, ...(motor ? { motor } : {}), ...(typeof pedido === 'string' && pedido ? { pedido } : {}) };
   const c = await api('/api/conversas', { method: 'POST', body: JSON.stringify(corpo) });
@@ -681,10 +717,11 @@ async function abrir(caminho) {
 // ---------- dock e ações ----------
 const aberta = (q) => (q === 'arvore' ? !$('#arvore').classList.contains('fechado') : false);
 function pintarDock() {
-  const icones = { arvore: 'arvore', grafo: 'grafo', config: 'engrenagem', 'nova-conversa': 'conversaNova', conteudos: 'grade', centralizar: 'mira', sair: 'sair',
+  const icones = { conversas: 'conversas', arvore: 'arvore', grafo: 'grafo', config: 'engrenagem', 'nova-conversa': 'conversaNova', conteudos: 'grade', centralizar: 'mira', sair: 'sair',
     tema: document.documentElement.dataset.tema === 'escuro' ? 'sol' : 'lua' };
   document.querySelectorAll('#dock button').forEach((b) => { b.innerHTML = ic(icones[b.dataset.acao]); });
   $('#dock [data-acao="arvore"]')?.classList.toggle('ligado', !$('#arvore')?.classList.contains('fechado'));
+  $('#dock [data-acao="conversas"]')?.classList.toggle('ligado', document.body.classList.contains('ver-conversas'));
   $('#dock [data-acao="conteudos"]')?.classList.toggle('ligado', !$('#folha-conteudos')?.hidden);
   $('#dock [data-acao="grafo"]')?.classList.toggle('ligado', !$('#grafo')?.hidden);
   $('#dock [data-acao="config"]')?.classList.toggle('ligado', !$('#folha-config')?.hidden);
@@ -693,7 +730,8 @@ document.addEventListener('click', async (e) => {
   const b = e.target.closest('[data-acao]');
   if (!b) return;
   const a = b.dataset.acao;
-  if (a === 'arvore') { $('#arvore').classList.toggle('fechado'); guardar('arvoreFechada', $('#arvore').classList.contains('fechado')); pintarDock(); }
+  if (a === 'conversas') verConversas();
+  if (a === 'arvore') { if (movel()) document.body.classList.remove('ver-conversas'); $('#arvore').classList.toggle('fechado'); guardar('arvoreFechada', $('#arvore').classList.contains('fechado')); pintarDock(); }
   if (a === 'nova-conversa') escolherMotor();
   if (a === 'fechar-seletor') fecharSeletor();
   if (a === 'abrir-motor') { api('/api/config/motores', { method: 'POST', body: JSON.stringify({ padrao: b.dataset.motor }) }); novaConversa(null, b.dataset.motor); }
@@ -997,9 +1035,11 @@ async function iniciar() {
   $('.visor-nav.ant').innerHTML = ic('voltar'); $('.visor-nav.prox').innerHTML = ic('seta');
   document.querySelectorAll('.ic-enviar').forEach((x) => { x.innerHTML = ic('enviar'); });
   document.querySelectorAll('.ic-baixar').forEach((x) => { x.innerHTML = ic('baixar'); });
-  if (recuperar('arvoreFechada', false)) $('#arvore').classList.add('fechado');
+  if (recuperar('arvoreFechada', false) || movel()) $('#arvore').classList.add('fechado');
   pintarDock();
-  await Promise.all([carregarArvore(), atualizarEstado(), pintarComece()]);
+  await Promise.all([carregarArvore(), atualizarEstado()]);
+  await pintarComece();
+  if (movel() && !S.conversas.some((c) => c.id === S.ativa)) verConversas(true); // celular sem conversa aberta: começa pela lista
   desenharEspaco();
   setInterval(() => atualizarEstado().catch(() => {}), 2000);
   setInterval(() => carregarArvoreSeMudou().catch(() => {}), 6000);
@@ -1013,5 +1053,8 @@ async function carregarArvoreSeMudou() {
   assinaturaArvore = ass;
   if (!primeira) { const raiz = $('#arvore-lista'); raiz.innerHTML = ''; raiz.append(montarNos(dados)); }
 }
+
+// PWA: instala no celular/computador e abre em tela cheia
+if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
 
 fetch('/api/eu').then((r) => r.json()).then((r) => (r.logado ? iniciar() : mostrarLogin()));
