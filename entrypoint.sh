@@ -17,6 +17,8 @@ log() { printf '\033[1;34m[core-os]\033[0m %s\n' "$*"; }
 # volumes do Coolify nascem como root: devolve pro coreos
 mkdir -p "$DADOS" "$(dirname "$VAULT")" "$CASA/.claude" "$CASA/.codex" "$CASA/.gemini"
 chown -R coreos:coreos /data "$CASA/.claude" "$CASA/.codex" "$CASA/.gemini" 2>/dev/null || true
+# EGI Drive: pasta compartilhada com drive.appegi.com.br (só a raiz; o conteúdo já nasce como uid 1000)
+mkdir -p /drive && chown coreos:coreos /drive 2>/dev/null || true
 
 # --- 1. .env que o painel e as skills leem --------------------------------------
 : "${CORE_OS_PASSWORD:?Defina CORE_OS_PASSWORD no Coolify (senha do painel).}"
@@ -50,6 +52,7 @@ umask 027
   [ -n "$WHATS_DONO" ] && echo "WHATS_DONO=$(echo "$WHATS_DONO" | tr -cd '0-9')"
   [ -n "$ANTHROPIC_API_KEY" ] && echo "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY"
   [ -n "$OPENAI_API_KEY" ] && echo "OPENAI_API_KEY=$OPENAI_API_KEY"
+  echo "CORE_OS_DRIVE=/drive"
   echo "TZ=${TZ:-America/Sao_Paulo}"
 } >"$ENV_FILE"
 chown root:coreos "$ENV_FILE"; chmod 640 "$ENV_FILE"

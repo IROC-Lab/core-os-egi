@@ -82,6 +82,7 @@ Toda entrega ganha um `pedido.md` na pasta dela: o que eu pedi, por onde pedi (p
 | `thumbnail` | Gera thumbnail de YouTube a partir do roteiro e de uma referência de estilo |
 | `edicao-video` | Edita vídeo curto: último take de cada fala, cortes, legenda e trilha |
 | `save` | Fecha a sessão: captura final, todo, lições e índices em dia |
+| `drive` | Busca, lê e organiza arquivos do Drive do dono (drive.appegi.com.br, montado em `/drive`): brand books, fotos, logos |
 | `novo-especialista` | Cria um novo especialista (subagente) a partir de uma descrição: arquivo em `.claude/agents/`, pasta de trabalho e registro no §9 |
 
 > Regra pra criar a próxima: fez a mesma coisa 3 vezes, vira skill. Moram em `.claude/skills/<nome>/SKILL.md` e entram nesta tabela.
