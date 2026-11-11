@@ -52,7 +52,7 @@ O que mudou em relação ao original: o painel virou container (Dockerfile + ent
 
 ### 2. Logar o Claude Code (uma vez, fica no volume)
 Pulo este passo quem definiu `ANTHROPIC_API_KEY`. Com assinatura (Pro/Max):
-1. Coolify > recurso > **Terminal** do container (ou `docker exec -it core-os-cerebro bash`).
+1. Coolify > recurso > **Terminal** do container (ou `docker exec -it <container do recurso> bash`).
 2. `gosu coreos claude` → dentro do Claude, `/login` → abra o link no seu navegador, autorize e cole o código de volta. `/exit`.
 3. Teste: `gosu coreos claude -p "diga oi"`.
 

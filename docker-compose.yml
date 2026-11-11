@@ -4,7 +4,6 @@
 services:
   cerebro:
     build: .
-    container_name: core-os-cerebro
     restart: unless-stopped
     environment:
       # --- obrigatórias ---
