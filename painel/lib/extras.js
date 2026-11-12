@@ -1,21 +1,22 @@
-// Core OS · catálogo do que dá pra acrescentar ao cérebro: aplicações (programas no servidor),
+// EGI Brand · catálogo do que dá pra acrescentar ao cérebro de uma empresa: aplicações (programas no espaço dela),
 // conexões MCP (ferramentas que o Claude Code ganha) e os primeiros testes de um clique.
-// Cada item vira um botão que abre uma conversa já com o pedido escrito; quem instala é o Claude.
+// Cada item vira um botão que abre uma conversa já com o pedido escrito; quem instala é o agente, SEM root:
+// tudo vai pro HOME da empresa (~/.local), então uma empresa nunca mexe no que a outra instalou.
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-const casa = os.homedir();
-const PASTAS = [...new Set([...(process.env.PATH || '').split(':'), path.join(casa, '.local', 'bin'), '/usr/local/bin', '/usr/bin'])];
-const temBin = (...nomes) => nomes.some((n) => PASTAS.some((p) => { try { fs.accessSync(path.join(p, n), fs.constants.X_OK); return true; } catch { return false; } }));
+let casa = os.homedir();
+const pastas = () => [...new Set([path.join(casa, '.local', 'bin'), '/home/coreos/.local/bin', '/usr/local/bin', '/usr/bin'])];
+const temBin = (...nomes) => nomes.some((n) => pastas().some((p) => { try { fs.accessSync(path.join(p, n), fs.constants.X_OK); return true; } catch { return false; } }));
 const existe = (...caminhos) => caminhos.some((c) => fs.existsSync(c));
-const npmGlobal = (pacote) => existe(`/usr/lib/node_modules/${pacote}`, `/usr/local/lib/node_modules/${pacote}`);
+const npmGlobal = (pacote) => existe(`/usr/lib/node_modules/${pacote}`, `/usr/local/lib/node_modules/${pacote}`, path.join(casa, '.local', 'lib', 'node_modules', pacote));
 
-const REGRA = 'Se precisar de chave ou login, me peça aqui e guarde só em /opt/core-os/.env (nunca dentro do cérebro). No fim, teste e me diga em uma frase o que eu ganhei.';
+const REGRA = 'Sem sudo: instale só no meu espaço (~/.local, npm com prefixo ~/.local, pipx ou binário oficial em ~/.local/bin). Se precisar de chave, me peça pra cadastrar no painel (Configurações › Variáveis) e leia de $CORE_OS_ENV; nunca grave chave dentro do cérebro. No fim, teste e me diga em uma frase o que eu ganhei.';
 
 export const APLICACOES = [
   { id: 'ffmpeg', nome: 'FFmpeg', logo: 'ffmpeg.svg', faz: 'Corta, junta e converte vídeo e áudio', instalado: () => temBin('ffmpeg'),
-    pedido: 'Instala o FFmpeg neste servidor (apt) e confere com ffmpeg -version.' },
+    pedido: 'Confere se o FFmpeg está disponível (ffmpeg -version); ele já vem no servidor do EGI Brand.' },
   { id: 'yt-dlp', nome: 'yt-dlp', logo: 'yt-dlp.png', faz: 'Baixa vídeo do YouTube, Instagram e TikTok', instalado: () => temBin('yt-dlp'),
     pedido: 'Instala o yt-dlp neste servidor (versão mais nova, pelo binário oficial ou pipx) e confere com yt-dlp --version.' },
   { id: 'whisper', nome: 'Whisper', logo: 'openai.svg', faz: 'Transcreve áudio e vídeo, aqui mesmo no servidor', instalado: () => temBin('whisper-cli', 'whisper', 'faster-whisper', 'whisper-ctranslate2'),
@@ -23,11 +24,11 @@ export const APLICACOES = [
   { id: 'hyperframes', nome: 'HyperFrames', logo: 'hyperframes-color.svg', faz: 'Motion design em código, renderizado em vídeo', instalado: () => temBin('hyperframes') || npmGlobal('hyperframes'),
     pedido: 'Instala o HyperFrames neste servidor (npm, com o Chromium que ele precisa pra renderizar), renderiza um teste de 3 segundos em conteudo/ e confere que o vídeo abriu.' },
   { id: 'playwright', nome: 'Playwright', logo: 'playwright.svg', faz: 'Navegador que o Claude controla: lê sites, tira print, preenche formulário', instalado: () => existe(path.join(casa, '.cache', 'ms-playwright')),
-    pedido: 'Instala o Playwright com o Chromium neste servidor (com as dependências do sistema), tira um print de https://example.com e salva em conteudo/.' },
+    pedido: 'Instala o Playwright com o Chromium no meu espaço (npm com prefixo ~/.local; as bibliotecas do sistema já vêm no servidor), tira um print de https://example.com e salva em conteudo/.' },
   { id: 'vercel', nome: 'Vercel CLI', logo: 'vercel.svg', faz: 'Publica site e landing page com link na hora', instalado: () => temBin('vercel'),
     pedido: 'Instala o Vercel CLI neste servidor (npm i -g vercel) e me guia no login com a minha conta (vercel login, pelo link).' },
   { id: 'gh', nome: 'GitHub CLI', logo: 'github.svg', faz: 'Guarda e versiona os seus projetos no GitHub', instalado: () => temBin('gh'),
-    pedido: 'Instala o GitHub CLI neste servidor (repositório oficial do apt) e me guia no login (gh auth login, pelo navegador com código).' },
+    pedido: 'Instala o GitHub CLI no meu espaço (binário oficial do GitHub Releases em ~/.local/bin) e me guia no login (gh auth login, pelo navegador com código).' },
 ];
 
 export const MCPS = [
@@ -59,7 +60,8 @@ function mcpsInstalados(vault) {
   return [...nomes].map((n) => n.toLowerCase());
 }
 
-export function catalogo(vault) {
+export function catalogo(vault, casaEmpresa) {
+  if (casaEmpresa) casa = casaEmpresa;
   const mcps = mcpsInstalados(vault);
   return {
     aplicacoes: APLICACOES.map(({ instalado, ...a }) => ({ ...a, pedido: `${a.pedido} ${REGRA}`, instalado: instalado() })),
