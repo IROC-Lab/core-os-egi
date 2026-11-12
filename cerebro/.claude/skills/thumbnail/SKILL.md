@@ -9,7 +9,7 @@ description: Gera thumbnail de vídeo do YouTube a partir do roteiro e de uma re
 1. Pasta: `conteudo/thumbnails/<slug-do-video>/` com `pedido.md`.
 2. Ler o roteiro e tirar o gancho (a promessa em até 4 palavras).
 3. Montar 3 caminhos diferentes de promessa (não 3 cores da mesma ideia).
-4. Gerar a cena com o gerador de imagem configurado (a chave fica em `/opt/core-os/.env`, nunca no cérebro). Foto de referência do dono em `assets/`.
+4. Gerar a cena com o gerador de imagem configurado (a chave é uma variável da empresa em `$CORE_OS_ENV`, cadastrada no painel; nunca no cérebro). Cores, fontes e logo: sempre os de `marca/` (leia `marca/CLAUDE.md` antes). Foto de referência do dono em `assets/`.
 5. Edição final na IA: ícones, texto curto, luz. Entregar em 1280x720 JPG.
 
 ## Nunca

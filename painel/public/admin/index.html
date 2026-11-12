@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0a0b">
+  <title>EGI Brand · Admin</title>
+  <meta name="description" content="Painel da EGI Group para administrar as empresas do EGI Brand.">
+  <link rel="icon" type="image/png" href="/icones/icone-192.png">
+  <link rel="stylesheet" href="/admin/admin.css">
+</head>
+<body>
+  <div id="login" class="tela-login" hidden>
+    <form class="cartao login" id="form-login">
+      <div class="logo"><img class="so-claro" src="/marca/egi-assinatura-escura.png" alt="EGI"><img class="so-escuro" src="/marca/egi-assinatura-neon.png" alt="EGI"></div>
+      <h1>EGI Brand · Admin</h1>
+      <input id="email" type="email" placeholder="E-mail" autocomplete="username" required>
+      <input id="senha" type="password" placeholder="Senha" autocomplete="current-password" required>
+      <button class="primario" type="submit">Entrar</button>
+      <p class="erro" id="login-erro"></p>
+      <p class="assinatura">EGI Brand · por <b>EGI Group</b></p>
+    </form>
+  </div>
+
+  <div id="app" hidden>
+    <header class="topo">
+      <div class="topo-marca"><img class="so-claro" src="/marca/egi-assinatura-escura.png" alt="EGI"><img class="so-escuro" src="/marca/egi-assinatura-neon.png" alt="EGI"><span><b>EGI Brand</b> Admin</span></div>
+      <div class="topo-acoes"><span id="quem" class="sutil"></span><button class="leve" data-acao="tema">Tema</button><button class="leve" data-acao="sair">Sair</button></div>
+    </header>
+
+    <main class="conteudo">
+      <div id="alertas"></div>
+      <section id="kpis" class="kpis"></section>
+
+      <section class="cartao">
+        <div class="barra">
+          <input id="busca" type="search" placeholder="Buscar por nome, CNPJ, e-mail ou identificador">
+          <select id="filtro-status">
+            <option value="">Todos os status</option>
+            <option value="ativa">Em dia</option>
+            <option value="inadimplente">Pagamento atrasado</option>
+            <option value="suspensa">Suspensas</option>
+            <option value="aguardando_setup">Aguardando setup</option>
+            <option value="cancelada">Canceladas</option>
+          </select>
+          <span class="espaco"></span>
+          <button class="leve" data-acao="planos">Planos</button>
+          <button class="leve" data-acao="rotina">Rodar cobrança agora</button>
+          <button class="primario" data-acao="nova">+ Nova empresa</button>
+        </div>
+        <div class="tabela-rolagem"><table class="tabela" id="tabela-empresas">
+          <thead><tr><th>Empresa</th><th>Status</th><th>Mensal</th><th>Próximo vencimento</th><th>Em atraso</th><th>Desde</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+      </section>
+    </main>
+    <footer class="assinatura">EGI Brand · por <b>EGI Group</b></footer>
+  </div>
+
+  <!-- ficha da empresa -->
+  <aside id="ficha" class="gaveta" hidden>
+    <div class="gaveta-fundo" data-acao="fechar-ficha"></div>
+    <div class="gaveta-corpo">
+      <header class="gaveta-topo" id="ficha-topo"></header>
+      <nav class="abas" id="ficha-abas">
+        <button data-aba="dados" class="ativa">Dados</button><button data-aba="cobrancas">Cobranças</button><button data-aba="canais">Canais</button>
+        <button data-aba="variaveis">Variáveis</button><button data-aba="usuarios">Usuários</button><button data-aba="historico">Histórico</button>
+      </nav>
+      <div id="ficha-corpo" class="gaveta-conteudo"></div>
+    </div>
+  </aside>
+
+  <!-- modal genérico -->
+  <div id="modal" class="modal" hidden>
+    <div class="modal-fundo" data-acao="fechar-modal"></div>
+    <div class="modal-caixa cartao" id="modal-caixa"></div>
+  </div>
+
+  <script type="module" src="/admin/admin.js"></script>
+</body>
+</html>

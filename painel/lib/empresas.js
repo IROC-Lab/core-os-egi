@@ -226,7 +226,8 @@ export function criarServicoEmpresas({ db, cfg, cofre, log = console.log }) {
       USER: e.unix_uid ? usuarioUnix(e) : process.env.USER || 'egi',
       LOGNAME: e.unix_uid ? usuarioUnix(e) : process.env.USER || 'egi',
       SHELL: '/bin/bash',
-      PATH: cfg.pathAgentes,
+      PATH: `${path.join(p.casa, '.local', 'bin')}:${cfg.pathAgentes}`,
+      NPM_CONFIG_PREFIX: path.join(p.casa, '.local'), // npm -g da empresa vai pro HOME dela, nunca pro do servidor
       TMPDIR: p.tmp,
       LANG: process.env.LANG || 'C.UTF-8',
       TZ: process.env.TZ || 'America/Sao_Paulo',

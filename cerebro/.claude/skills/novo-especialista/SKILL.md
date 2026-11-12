@@ -48,6 +48,6 @@ Só a mensagem final pra pessoa (ou o entregável). Sem explicar o que fez.
 
 ## Regras
 - `model`: `sonnet` pra atendimento e rotina, `opus` pra análise pesada, `haiku` pra classificação simples.
-- Nunca colocar credencial no agente; ele lê `/opt/core-os/.env` via skills, como todo mundo.
+- Nunca colocar credencial no agente; ele lê as variáveis da empresa (`$CORE_OS_ENV`) via skills, como todo mundo.
 - Especialista que fala com cliente nunca fecha preço, prazo ou desconto. Isso é do dono.
 - Especialista repetindo o mesmo procedimento mecânico 3 vezes: vira skill (`.claude/skills/`), e o agente passa a chamar a skill.

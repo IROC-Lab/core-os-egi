@@ -1,11 +1,11 @@
 ---
 name: whatsapp
-description: WhatsApp do cérebro em mão dupla, pela Evolution API da EGI (evo.appegi.com.br, credenciais em /opt/core-os/.env). Lê conversas ("varre a conversa com o João", "o que a Maria me mandou hoje?", "quem me chamou hoje?"), acha contato pelo nome e manda mensagem, imagem, documento ou áudio pra qualquer pessoa ("manda pro João que a reunião mudou", "envia essa thumb pra Ana") ou pro próprio dono ("me manda no zap", "me avisa quando terminar"). Use sempre que o pedido envolver WhatsApp.
+description: WhatsApp do cérebro em mão dupla, pela Evolution API da EGI (evo.appegi.com.br, credenciais da instância desta empresa em $CORE_OS_ENV). Lê conversas ("varre a conversa com o João", "o que a Maria me mandou hoje?", "quem me chamou hoje?"), acha contato pelo nome e manda mensagem, imagem, documento ou áudio pra qualquer pessoa ("manda pro João que a reunião mudou", "envia essa thumb pra Ana") ou pro próprio dono ("me manda no zap", "me avisa quando terminar"). Use sempre que o pedido envolver WhatsApp.
 ---
 
 # WhatsApp (mão dupla, Evolution API da EGI)
 
-As credenciais ficam em `/opt/core-os/.env` (fora do cérebro, nunca copiar pra cá). Quem pode dar ordens pelo WhatsApp fica em Configurações › WhatsApp no painel. 
+As credenciais (só da instância de WhatsApp desta empresa) ficam no arquivo apontado por `$CORE_OS_ENV` (fora do cérebro, nunca copiar pra cá). Quem pode dar ordens pelo WhatsApp fica em Configurações › WhatsApp no painel. 
 
 ## Comandos
 ```bash
@@ -35,7 +35,7 @@ Se `ler` ou `contato` acharem mais de uma pessoa com o nome, ele lista os númer
 Rode `status`. Desconectado: o dono reconecta lendo o QR no painel (Configurações › WhatsApp).
 
 ## Trocar quem pode dar ordens
-Fica num arquivo só, lido a cada mensagem (não precisa reiniciar nada): `/opt/core-os/dados/whatsapp-acesso.json`
+Fica num arquivo só, lido a cada mensagem (não precisa reiniciar nada): o painel do EGI Brand (Configurações › WhatsApp › Quem pode dar ordens)
 ```json
 { "numeros": ["5527999999999"], "chatVoce": true }
 ```

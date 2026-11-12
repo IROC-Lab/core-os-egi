@@ -522,3 +522,76 @@ body.movel .folha-corpo { width: 100vw; height: calc(100dvh - 40px - var(--topo-
 body.movel .folha-topo { padding: 18px 16px 10px; }
 body.movel .grade-conteudos { padding: 6px 16px calc(24px + var(--base-segura)); }
 body.movel .grupo-itens { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+
+/* ================= EGI Brand · por EGI Group =================
+   Paleta da marca EGI (mesmos valores dos tokens do EGI OS): verde-água escurecido no claro (contraste AA),
+   verde-água neon do logotipo no escuro, violeta do "I" como apoio. */
+:root {
+  --acento: #0f766e;
+  --selecao: rgba(15, 118, 110, 0.12);
+  --violeta: #6d28d9;
+  --fundo: #fafafa;
+}
+:root[data-tema="escuro"] {
+  --acento: #2ee6c4;
+  --selecao: rgba(46, 230, 196, 0.16);
+  --violeta: #a78bfa;
+  --fundo: #0a0a0b;
+}
+:root[data-tema="escuro"] .botao-primario { color: #04201c; }
+
+.egi-logo { display: flex; justify-content: center; margin-bottom: 4px; }
+.egi-logo img { height: 46px; width: auto; }
+.so-escuro { display: none; }
+:root[data-tema="escuro"] .so-escuro { display: block; }
+:root[data-tema="escuro"] .so-claro { display: none; }
+.marca-produto { display: grid; gap: 2px; text-align: center; margin-bottom: 6px; }
+.marca-produto b { font-size: 22px; font-weight: 680; letter-spacing: -0.02em; }
+.marca-produto span { color: var(--texto-2); }
+.assinatura-egi { margin: 6px 0 0; text-align: center; font-size: 11.5px; color: var(--texto-3); letter-spacing: 0.01em; }
+.assinatura-egi b { color: var(--texto-2); font-weight: 600; }
+
+.bloqueio-card { width: min(440px, calc(100vw - 32px)); text-align: left; }
+.bloqueio-card h2 { margin: 4px 0 2px; font-size: 20px; letter-spacing: -0.02em; }
+.bloqueio-card .botao-primario { display: block; text-align: center; text-decoration: none; padding: 12px; margin-top: 4px; }
+.config-botoes.centro { justify-content: center; }
+
+.barra-suporte { position: fixed; top: 0; left: 0; right: 0; z-index: 60; display: flex; align-items: center; justify-content: center; gap: 14px;
+  padding: 6px 12px; font-size: 12.5px; background: var(--violeta); color: #fff; }
+.barra-suporte button { padding: 3px 10px; border-radius: 999px; background: rgba(255, 255, 255, 0.2); font-weight: 600; }
+body.com-suporte #app { top: 30px; }
+body.com-suporte .palco, body.com-suporte .painel-lateral, body.com-suporte .conversas { margin-top: 30px; }
+
+.config-dica.alerta { padding: 10px 12px; border-radius: 12px; background: rgba(255, 159, 10, 0.12); color: var(--texto); }
+.config-dica.destaque { padding: 10px 12px; border-radius: 12px; background: var(--selecao); color: var(--texto); }
+.config-dica a, .config-linhas a, .tabela-cob a { color: var(--acento); }
+
+.vars { list-style: none; margin: 8px 0; padding: 0; display: grid; gap: 4px; }
+.vars li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 10px; background: var(--hover); }
+.vars code { font: 12px var(--mono); overflow: hidden; text-overflow: ellipsis; }
+.vars span { color: var(--texto-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.var-nova { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0; }
+.var-nova input:not([type=checkbox]), .acesso-novo input, .campo input, .campo textarea {
+  flex: 1 1 160px; min-width: 0; height: 36px; padding: 0 12px; border-radius: 10px; border: 0.5px solid var(--linha); background: var(--vidro-forte); color: var(--texto); font: inherit; outline: none; }
+.campo textarea { height: auto; padding: 8px 12px; resize: vertical; line-height: 1.45; }
+.var-nova input:focus, .acesso-novo input:focus, .campo input:focus, .campo textarea:focus { border-color: var(--acento); box-shadow: 0 0 0 3px var(--selecao); }
+
+.tabela-cob { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 12.5px; }
+.tabela-cob th { text-align: left; font-weight: 600; color: var(--texto-2); padding: 6px 4px; border-bottom: 0.5px solid var(--linha); }
+.tabela-cob td { padding: 7px 4px; border-bottom: 0.5px solid var(--linha); }
+@media (max-width: 520px) { .tabela-cob th:nth-child(2), .tabela-cob td:nth-child(2) { display: none; } }
+
+.marca-corpo { max-width: 760px; margin: 0 auto; }
+.marca-lista { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
+.marca-lista li { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 6px; border-radius: 12px; background: var(--hover); }
+.marca-lista li.config-sutil { display: block; background: none; padding: 4px 2px; }
+.marca-lista img { width: 44px; height: 44px; object-fit: contain; border-radius: 8px; background: repeating-conic-gradient(var(--hover) 0 25%, transparent 0 50%) 0 0 / 12px 12px; }
+.marca-tipo { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 8px; background: var(--selecao); color: var(--acento); font: 600 10.5px var(--mono); }
+.marca-nome { display: grid; min-width: 0; }
+.marca-nome a { color: var(--texto); text-decoration: none; font-weight: 550; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.marca-nome small { color: var(--texto-3); }
+.campo { display: grid; gap: 6px; margin: 10px 0; }
+.campo > span { font-weight: 600; font-size: 12.5px; color: var(--texto-2); }
+.cor-linha { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+.cor-linha input[type=color] { width: 44px; height: 36px; padding: 2px; border-radius: 10px; border: 0.5px solid var(--linha); background: var(--vidro-forte); cursor: pointer; }
+.cor-linha .cor-nome { flex: 1; height: 36px; padding: 0 12px; border-radius: 10px; border: 0.5px solid var(--linha); background: var(--vidro-forte); color: var(--texto); font: inherit; }

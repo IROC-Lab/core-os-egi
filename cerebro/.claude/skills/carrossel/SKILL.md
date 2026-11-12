@@ -6,7 +6,7 @@ description: Cria ou clona carrossel de Instagram (slides 1080x1350). Use quando
 # Carrossel
 
 ## Modos
-- **CRIAR:** tema ou roteiro vira carrossel novo na marca do dono.
+- **CRIAR:** tema ou roteiro vira carrossel novo na marca do dono: antes de tudo, leia `marca/CLAUDE.md` (cores, fontes, logo, tom de voz e brandbook da empresa) e siga à risca.
 - **CLONE:** link de carrossel vira réplica fiel em português (mesmo layout, cores e hierarquia).
 
 ## Fluxo

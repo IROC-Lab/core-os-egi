@@ -1,42 +1,56 @@
-# Core OS · EGI — recurso "Docker Compose" no Coolify.
-# No Coolify: New Resource > Docker Compose (a partir deste repositório Git) ou Dockerfile.
-# Defina as variáveis em "Environment Variables" e o domínio (ex.: cerebro.appegi.com.br) apontando pra porta 3000.
+# EGI Brand (por EGI Group) · recurso "Docker Compose" NOVO no Coolify.
+# NÃO use no recurso do Core OS atual (cerebro.appegi.com.br): este compose é a plataforma multi-tenant.
+# Domínio (ex.: brand.appegi.com.br) apontando pro serviço egi-brand, porta 3000. Variáveis no .env.example.
 services:
-  cerebro:
+  egi-brand:
     build: .
     restart: unless-stopped
+    depends_on: [banco]
     environment:
       # --- obrigatórias ---
-      CORE_OS_PASSWORD: ${CORE_OS_PASSWORD}          # senha do painel (min. 8 chars)
-      CORE_OS_HOOK_TOKEN: ${CORE_OS_HOOK_TOKEN}      # token n8n -> painel (openssl rand -hex 24)
-      EVO_KEY: ${EVO_KEY}                            # apikey global da sua Evolution
-      # --- seus serviços já existentes ---
+      DATABASE_URL: postgres://egi_brand:${BANCO_SENHA}@banco:5432/egi_brand   # Postgres de fora: troque esta linha
+      EGI_MASTER_KEY: ${EGI_MASTER_KEY}                # openssl rand -hex 32 (guarde num cofre!)
+      EGI_PUBLIC_URL: ${EGI_PUBLIC_URL}                # https://brand.appegi.com.br
+      EGI_ADMIN_EMAIL: ${EGI_ADMIN_EMAIL}              # primeiro admin EGI (criado só se não existir nenhum)
+      EGI_ADMIN_SENHA: ${EGI_ADMIN_SENHA}
+      # --- cobrança (Asaas) ---
+      ASAAS_API_KEY: ${ASAAS_API_KEY:-}
+      ASAAS_AMBIENTE: ${ASAAS_AMBIENTE:-sandbox}       # sandbox | producao
+      ASAAS_WEBHOOK_TOKEN: ${ASAAS_WEBHOOK_TOKEN:-}    # o mesmo token configurado no webhook do Asaas
+      EGI_DIAS_SUSPENSAO: ${EGI_DIAS_SUSPENSAO:-5}
+      EGI_DIAS_LEMBRETE: ${EGI_DIAS_LEMBRETE:-3}
+      EGI_SETUP_VENCIMENTO_DIAS: ${EGI_SETUP_VENCIMENTO_DIAS:-0}
+      # --- canais ---
       EVO_URL: ${EVO_URL:-https://evo.appegi.com.br}
-      EVO_INSTANCE: ${EVO_INSTANCE:-cerebro}         # instância do WhatsApp do cérebro (nova ou já existente)
-      N8N_URL: ${N8N_URL:-https://n8n.appegi.com.br}
-      CORE_OS_PUBLIC_URL: ${CORE_OS_PUBLIC_URL:-https://cerebro.appegi.com.br}
-      # --- opcionais ---
-      CORE_OS_NOME: ${CORE_OS_NOME:-Iuri}
-      WHATS_DONO: ${WHATS_DONO:-}                    # 55DDDNUMERO que pode dar ordens pelo WhatsApp
-      GCHAT_PERMITIDOS: ${GCHAT_PERMITIDOS:-}        # e-mails ou @dominio.com separados por vírgula
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}      # vazio = login com a assinatura (claude /login)
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}            # vazio = login com a conta ChatGPT (device code) no Codex
+      EVO_KEY: ${EVO_KEY:-}                            # apikey global: fica SÓ na plataforma, nunca vai pras empresas
+      EGI_AVISOS_EVO_INSTANCIA: ${EGI_AVISOS_EVO_INSTANCIA:-}   # instância da EGI que manda os avisos de cobrança
+      EGI_SUPORTE_CONTATO: ${EGI_SUPORTE_CONTATO:-}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}                  # transcrição de áudio (a empresa pode usar a dela)
+      # --- capacidade ---
+      EGI_MAX_PARALELO: ${EGI_MAX_PARALELO:-3}         # agentes sem tela rodando ao mesmo tempo (todas as empresas)
       TZ: America/Sao_Paulo
     volumes:
-      - cerebro-dados:/data                 # cérebro (.md, skills, agentes) + dados do painel
-      - cerebro-claude:/home/coreos/.claude # login do Claude Code + histórico das sessões
-      - cerebro-codex:/home/coreos/.codex   # login do Codex (OpenAI) + sessões
-      - cerebro-gemini:/home/coreos/.gemini # login do Antigravity (Google) + conversas
-      - /opt/egi-drive:/drive               # EGI Drive (drive.appegi.com.br): a mesma pasta nos dois Core OS
+      - egi-brand-dados:/data                          # /data/empresas/<slug>/ (cérebro, logins, .env) + /data/plataforma
     expose:
       - "3000"
-    # Se o Coolify NÃO criar a label de porta sozinho, descomente:
-    # labels:
-    #   - coolify.managed=true
-    #   - traefik.http.services.core-os-cerebro.loadbalancer.server.port=3000
+
+  # Postgres DEDICADO do EGI Brand (não mexe nos bancos compartilhados da EGI).
+  # Pra usar um Postgres de fora, defina DATABASE_URL e apague este serviço e o depends_on.
+  banco:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: egi_brand
+      POSTGRES_USER: egi_brand
+      POSTGRES_PASSWORD: ${BANCO_SENHA}
+    volumes:
+      - egi-brand-banco:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U egi_brand -d egi_brand"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
 
 volumes:
-  cerebro-dados:
-  cerebro-claude:
-  cerebro-codex:
-  cerebro-gemini:
+  egi-brand-dados:
+  egi-brand-banco:

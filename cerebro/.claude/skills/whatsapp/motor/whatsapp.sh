@@ -9,7 +9,7 @@
 #   whatsapp.sh audio <arquivo> [destino]
 #   whatsapp.sh status | eu
 set -euo pipefail
-ENV=/opt/core-os/.env; [ -f "$ENV" ] && set -a && . "$ENV" && set +a
+ENV=${CORE_OS_ENV:-/opt/core-os/.env}; [ -f "$ENV" ] && set -a && . "$ENV" && set +a
 : "${EVO_URL:?EVO_URL faltando em $ENV}" "${EVO_KEY:?}" "${EVO_INSTANCE:?}"
 export TZ=${TZ:-America/Sao_Paulo}
 cmd=${1:-}; shift || true

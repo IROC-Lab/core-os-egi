@@ -1,4 +1,4 @@
-// Core OS · interface do painel
+// EGI Brand (por EGI Group) · interface do painel do cliente
 import { marked } from '/vendor/marked/lib/marked.esm.js';
 
 // ---------- ícones (traço no estilo SF Symbols, desenhados em 24x24) ----------
@@ -35,6 +35,12 @@ const P = {
   baixar: '<path d="M12 4v11M7.5 10.5L12 15l4.5-4.5"/><path d="M4 14.5v3A2.5 2.5 0 0 0 6.5 20h11a2.5 2.5 0 0 0 2.5-2.5v-3"/>',
   voltar: '<path d="M15 6l-6 6 6 6"/>',
   play: '<path d="M8 5.5v13l10.5-6.5z"/>',
+  paleta: '<path d="M12 3.5a8.5 8.5 0 1 0 0 17c1.2 0 1.8-.8 1.8-1.7 0-1.2-1-1.6-1-2.6 0-1 .8-1.7 1.9-1.7h2.1a3.7 3.7 0 0 0 3.7-3.7c0-4.1-3.8-7.3-8.5-7.3z"/><circle cx="7.8" cy="11" r="1.1"/><circle cx="10.5" cy="7.3" r="1.1"/><circle cx="15" cy="7.6" r="1.1"/>',
+  aviao: '<path d="M21 4 3 11l6 2.2L19 7l-8 8 .2 5 3-3.5 4.3 3.3z"/>',
+  chave: '<circle cx="8" cy="15" r="4"/><path d="M11 12l8.5-8.5M16.5 6.5l2.5 2.5M14 9l2 2"/>',
+  cartao: '<rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="M3 10h18M7 15h4"/>',
+  cadeado: '<rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/>',
+  texto: '<path d="M5 6.5V5h14v1.5M12 5v14M9.5 19h5"/>',
   globo: '<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.3 2.4 3.5 5.2 3.5 8.5s-1.2 6.1-3.5 8.5c-2.3-2.4-3.5-5.2-3.5-8.5s1.2-6.1 3.5-8.5z"/>',
 };
 const ic = (n) => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${P[n]}</svg>`;
@@ -51,6 +57,8 @@ const recuperar = (k, p) => { try { return JSON.parse(localStorage.getItem(k)) ?
 async function api(caminho, opcoes = {}) {
   const r = await fetch(caminho, { headers: { 'Content-Type': 'application/json' }, ...opcoes });
   if (r.status === 401) { mostrarLogin(); throw new Error('login'); }
+  if (r.status === 402) { const j = await r.json().catch(() => ({})); mostrarBloqueio(j.bloqueio); throw new Error('bloqueio'); }
+  if (!r.ok && r.headers.get('content-type')?.includes('json')) { const j = await r.json(); const erro = new Error(j.erro || `Erro ${r.status}`); erro.status = r.status; throw erro; }
   return r.headers.get('content-type')?.includes('json') ? r.json() : r.text();
 }
 
@@ -59,11 +67,12 @@ function aplicarTema(t) { document.documentElement.dataset.tema = t; guardar('te
 aplicarTema(recuperar('tema', matchMedia('(prefers-color-scheme: dark)').matches ? 'escuro' : 'claro'));
 
 // ---------- login ----------
-function mostrarLogin() { $('#app').hidden = true; $('#login').hidden = false; $('#senha').focus(); }
+function mostrarLogin() { $('#app').hidden = true; $('#bloqueio').hidden = true; $('#login').hidden = false; $('#email').focus(); }
 $('#form-login').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const r = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ senha: $('#senha').value }) });
-  if (r.ok) { $('#login').hidden = true; iniciar(); } else { $('#login-erro').textContent = (await r.json()).erro; $('#senha').select(); }
+  const r = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: $('#email').value, senha: $('#senha').value }) });
+  const j = await r.json().catch(() => ({}));
+  if (r.ok) { if (j.admin) { location.href = '/admin'; return; } $('#login').hidden = true; comecar(); } else { $('#login-erro').textContent = j.erro || 'Não consegui entrar.'; $('#senha').select(); }
 });
 
 // ---------- estado ----------
@@ -717,7 +726,7 @@ async function abrir(caminho) {
 // ---------- dock e ações ----------
 const aberta = (q) => (q === 'arvore' ? !$('#arvore').classList.contains('fechado') : false);
 function pintarDock() {
-  const icones = { conversas: 'conversas', arvore: 'arvore', grafo: 'grafo', config: 'engrenagem', 'nova-conversa': 'conversaNova', conteudos: 'grade', centralizar: 'mira', sair: 'sair',
+  const icones = { conversas: 'conversas', arvore: 'arvore', grafo: 'grafo', config: 'engrenagem', 'nova-conversa': 'conversaNova', conteudos: 'grade', marca: 'paleta', centralizar: 'mira', sair: 'sair',
     tema: document.documentElement.dataset.tema === 'escuro' ? 'sol' : 'lua' };
   document.querySelectorAll('#dock button').forEach((b) => { b.innerHTML = ic(icones[b.dataset.acao]); });
   $('#dock [data-acao="arvore"]')?.classList.toggle('ligado', !$('#arvore')?.classList.contains('fechado'));
@@ -725,6 +734,7 @@ function pintarDock() {
   $('#dock [data-acao="conteudos"]')?.classList.toggle('ligado', !$('#folha-conteudos')?.hidden);
   $('#dock [data-acao="grafo"]')?.classList.toggle('ligado', !$('#grafo')?.hidden);
   $('#dock [data-acao="config"]')?.classList.toggle('ligado', !$('#folha-config')?.hidden);
+  $('#dock [data-acao="marca"]')?.classList.toggle('ligado', !$('#folha-marca')?.hidden);
 }
 document.addEventListener('click', async (e) => {
   const b = e.target.closest('[data-acao]');
@@ -912,12 +922,13 @@ async function tickConfig() {
     return pintarConfig();
   }
   if (document.activeElement?.closest?.('#config-corpo') && document.activeElement.matches('input, textarea')) return;
-  if ($('#acesso-novo')?.value) return;
+  if ([...document.querySelectorAll('#config-corpo input, #config-corpo textarea')].some((i) => i.type !== 'checkbox' && i.value)) return;
   await pintarConfig();
 }
 function fecharConfig() { $('#folha-config').hidden = true; qrAtual = null; qrVencido = false; pintarDock(); }
 async function pintarConfig() {
-  const [cfg, mot, ext] = await Promise.all([api('/api/config'), api('/api/config/motores'), api('/api/extras')]);
+  const [cfg, mot, ext, ass] = await Promise.all([api('/api/config'), api('/api/config/motores'), api('/api/extras'), api('/api/assinatura')]);
+  const vars = cfg.dono ? await api('/api/config/variaveis') : [];
   const itemExtra = (x) => `<li class="extra"><span class="extra-logo"><img src="/logos/${esc(x.logo)}" alt=""></span>
       <span class="extra-texto"><b>${esc(x.nome)}</b><span>${esc(x.faz)}</span></span>
       ${x.instalado ? '<span class="pilula conectado">Instalado</span>' : `<button class="botao-leve" data-acao="pedir" data-pedido="${esc(x.pedido)}">${ic('conversaNova')} Pedir na conversa</button>`}</li>`;
@@ -927,9 +938,7 @@ async function pintarConfig() {
   if (w.estado === 'open') { qrAtual = null; qrVencido = false; }
   acessoAtual = w.acesso || acessoAtual;
   const formata = (n) => (n ? n.replace(/^(\d{2})(\d{2})(\d{4,5})(\d{4})$/, '+$1 ($2) $3-$4') : 'nenhum');
-  const motorWhats = mot.motores[mot.whatsapp]?.nome || 'Claude Code';
-  const pedidoDominio = 'Quero configurar um subdomínio próprio pra este servidor, com HTTPS. Me guia passo a passo.';
-  const pedidoN8n = 'Conecta o n8n deste servidor no Claude Code por MCP, pra você criar e editar fluxos por aqui.';
+  const motorWhats = mot.motores[mot.canais]?.nome || 'Claude Code';
   const escolha = (campo) => Object.entries(mot.motores).map(([id, m]) => `<button class="botao-leve ${mot[campo] === id ? 'escolhido' : ''}" data-acao="motor" data-campo="${campo}" data-valor="${id}" title="${esc(m.instalado ? m.nome : `Não instalado. ${m.login}`)}"><img class="logo-mini" src="/logos/${id}.svg" alt="">${esc(m.nome)}${m.instalado ? '' : ' ·  não instalado'}</button>`).join('');
   const faltam = Object.values(mot.motores).filter((m) => !m.instalado);
   $('#config-corpo').innerHTML = `
@@ -937,17 +946,17 @@ async function pintarConfig() {
       <div class="config-cabeca"><span class="config-icone azul">${ic('terminal')}</span>
         <div class="config-titulo"><b>Motor de IA</b><span>Quem responde nas conversas: Claude Code, Codex (OpenAI) ou Antigravity (Google)</span></div></div>
       <dl class="config-linhas"><div><dt>Conversas novas no painel</dt><dd class="config-escolha">${escolha('padrao')}</dd></div>
-        <div><dt>WhatsApp</dt><dd class="config-escolha">${escolha('whatsapp')}</dd></div></dl>
-      <p class="config-dica">Vale pras próximas conversas; as abertas seguem no motor em que começaram. No WhatsApp, a troca abre uma conversa nova.</p>
+        <div><dt>WhatsApp e Telegram</dt><dd class="config-escolha">${escolha('canais')}</dd></div></dl>
+      <p class="config-dica">Cada motor entra com a conta da <b>sua empresa</b> (Anthropic, ChatGPT ou Google): na primeira conversa com um motor novo, faça o login no terminal que abrir. Vale pras próximas conversas; nos canais, a troca abre uma conversa nova.</p>
       ${Object.values(mot.motores).map((m) => `<p class="config-dica"><b>${esc(m.nome)}:</b> ${m.instalado ? '' : 'não instalado. '}${esc(m.login)}</p>`).join('')}
     </section>
     <section class="config-cartao">
       <div class="config-cabeca"><span class="config-icone verde">${ic('zap')}</span>
-        <div class="config-titulo"><b>WhatsApp</b><span>Evolution API rodando neste servidor</span></div>
+        <div class="config-titulo"><b>WhatsApp</b><span>O número da sua empresa, conectado pelo QR</span></div>
         <span class="pilula ${cls}">${rot}</span></div>
       <dl class="config-linhas">
         <div><dt>Número conectado</dt><dd>${esc(w.estado === 'open' ? formata(w.numero) : 'nenhum')}${w.estado === 'open' && w.nomePerfil ? ` <span class="config-sutil">${esc(w.nomePerfil)}</span>` : ''}</dd></div>
-        <div><dt>Fluxo</dt><dd>WhatsApp → n8n → ${esc(motorWhats)}</dd></div>
+        <div><dt>Fluxo</dt><dd>WhatsApp → EGI Brand → ${esc(motorWhats)}</dd></div>
       </dl>
       ${w.erro ? `<p class="config-dica">${esc(w.erro)}</p>` : ''}
       ${qrAtual ? `<div class="qr"><img alt="QR do WhatsApp" src="${qrAtual}"></div><p class="config-dica" style="text-align:center">No celular: WhatsApp › Aparelhos conectados › Conectar aparelho. O código se renova sozinho.</p>` : ''}
@@ -968,6 +977,7 @@ async function pintarConfig() {
         <p class="config-dica">Exemplo: conecte o número business aqui e autorize o seu número pessoal. Você manda mensagem do pessoal pro business e o cérebro responde lá.</p>
       </div>
     </section>
+    ${cartaoTelegram(cfg)}
     <section class="config-cartao">
       <div class="config-cabeca"><span class="config-icone azul">${ic('raio')}</span>
         <div class="config-titulo"><b>Aplicações extras</b><span>Programas que deixam o cérebro fazer mais coisas neste servidor</span></div></div>
@@ -980,22 +990,7 @@ async function pintarConfig() {
       <ul class="extras">${ext.mcps.map(itemExtra).join('')}</ul>
       <p class="config-dica">Se a conexão pedir chave ou login, o Claude pede na conversa e guarda fora do cérebro, só neste servidor.</p>
     </section>
-    <section class="config-cartao">
-      <div class="config-cabeca"><span class="config-icone laranja">${ic('fluxo')}</span>
-        <div class="config-titulo"><b>n8n</b><span>Automações que trabalham junto com o cérebro</span></div></div>
-      <p class="config-dica">O n8n se conecta ao Claude Code por MCP, direto numa conversa. É só pedir.</p>
-      <div class="config-botoes">
-        ${cfg.n8n.url ? `<a class="botao-leve" href="${esc(cfg.n8n.url)}" target="_blank" rel="noopener">${ic('fluxo')} Abrir n8n</a>` : ''}
-        <button class="botao-leve" data-acao="pedir" data-pedido="${esc(pedidoN8n)}">${ic('conversaNova')} Pedir numa conversa</button>
-      </div>
-    </section>
-    <section class="config-cartao">
-      <div class="config-cabeca"><span class="config-icone azul">${ic('globo')}</span>
-        <div class="config-titulo"><b>Endereço</b><span>Como você acessa este painel</span></div></div>
-      <dl class="config-linhas"><div><dt>Agora</dt><dd>${esc(cfg.servidor.painel)}</dd></div></dl>
-      <p class="config-dica">Quer usar seu domínio (ex.: <code>cerebro.seusite.com</code>) com cadeado de HTTPS? Abra uma conversa e peça. O Claude te guia no DNS e configura o servidor.</p>
-      <div class="config-botoes"><button class="botao-leve" data-acao="pedir" data-pedido="${esc(pedidoDominio)}">${ic('conversaNova')} Pedir numa conversa</button></div>
-    </section>`;
+    ${cartoesConta(cfg, ass, vars)}`;
 }
 async function conectarWhats(botao) {
   botao.disabled = true; qrVencido = false;
@@ -1024,12 +1019,214 @@ function autorizarNumero() {
 document.addEventListener('change', (e) => { if (e.target.id === 'acesso-voce') salvarAcesso((a) => { a.chatVoce = e.target.checked; }); });
 document.addEventListener('keydown', (e) => { if (e.target.id === 'acesso-novo') { e.target.classList.remove('invalido'); if (e.key === 'Enter') autorizarNumero(); } });
 
+// ---------- EGI Brand: bloqueio, suporte, Telegram, variáveis, assinatura, conta e marca ----------
+const reais = (c) => (Number(c || 0) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const dataBr = (d) => (d ? String(d).slice(0, 10).split('-').reverse().join('/') : '');
+const STATUS_COB = { pendente: ['', 'Em aberto'], paga: ['conectado', 'Paga'], vencida: ['erro', 'Vencida'], cancelada: ['', 'Cancelada'], estornada: ['', 'Estornada'] };
+const STATUS_EMP = { ativa: ['conectado', 'Em dia'], inadimplente: ['trabalhando', 'Pagamento atrasado'], suspensa: ['erro', 'Suspensa'], aguardando_setup: ['trabalhando', 'Aguardando setup'], cancelada: ['', 'Cancelada'] };
+
+async function comecar() {
+  let eu;
+  try { eu = await fetch('/api/eu').then((r) => r.json()); } catch { setTimeout(comecar, 3000); return; }
+  if (!eu.logado) return mostrarLogin();
+  if (eu.admin && !eu.empresa) { location.href = '/admin'; return; }
+  if (eu.admin) { $('#barra-suporte').hidden = false; $('#suporte-empresa').textContent = eu.empresa.nome; document.body.classList.add('com-suporte'); }
+  document.title = `${eu.empresa.nome} · EGI Brand`;
+  if (!eu.empresa.liberada) return mostrarBloqueio(eu.bloqueio);
+  iniciar();
+}
+
+function mostrarBloqueio(b) {
+  $('#app').hidden = true; $('#login').hidden = true; $('#bloqueio').hidden = false;
+  const st = b?.status;
+  const cob = b?.vencida || b?.setup;
+  const manual = String(b?.motivo || '').startsWith('Manual');
+  const titulo = st === 'aguardando_setup' ? 'Falta pouco pra liberar o seu cérebro' : st === 'cancelada' ? 'Assinatura encerrada' : 'Acesso suspenso';
+  const texto = st === 'aguardando_setup' ? 'Assim que o pagamento do setup inicial for confirmado, tudo é liberado na hora.'
+    : st === 'cancelada' ? 'A assinatura do EGI Brand desta empresa foi encerrada. Fale com a EGI pra voltar.'
+      : manual ? 'O acesso foi suspenso pela equipe EGI. Fale com o seu contato na EGI.'
+        : 'Há uma mensalidade em aberto. Seus arquivos e o seu cérebro continuam guardados: assim que o pagamento for confirmado, tudo volta na hora.';
+  $('#bloqueio-corpo').innerHTML = `<h2>${esc(titulo)}</h2><p class="login-sub">${esc(texto)}</p>
+    ${cob ? `<dl class="config-linhas"><div><dt>${cob.tipo === 'setup' ? 'Setup inicial' : 'Mensalidade'}</dt><dd>${reais(cob.valor_centavos)}</dd></div><div><dt>Vencimento</dt><dd>${dataBr(cob.vencimento)}</dd></div></dl>
+      ${cob.link_fatura ? `<a class="botao-primario" href="${esc(cob.link_fatura)}" target="_blank" rel="noopener">Pagar agora (Pix, boleto ou cartão)</a>` : ''}` : ''}`;
+}
+
+// ---------- configurações: Telegram ----------
+let tgCodigo = null;
+function cartaoTelegram(cfg) {
+  const t = cfg.telegram || {};
+  const ligado = Boolean(t.bot);
+  return `<section class="config-cartao">
+    <div class="config-cabeca"><span class="config-icone azul">${ic('aviao')}</span>
+      <div class="config-titulo"><b>Telegram</b><span>O bot da sua empresa conversando com o cérebro</span></div>
+      <span class="pilula ${t.conectado ? 'conectado' : ''}">${t.conectado ? 'Conectado' : ligado ? 'Com problema' : 'Desligado'}</span></div>
+    ${ligado ? `<dl class="config-linhas"><div><dt>Bot</dt><dd><a href="https://t.me/${esc(t.bot)}" target="_blank" rel="noopener">@${esc(t.bot)}</a></dd></div>
+      <div><dt>Fluxo</dt><dd>Telegram → EGI Brand → mesmo motor do WhatsApp</dd></div></dl>` : ''}
+    ${t.ultimoErro ? `<p class="config-dica">Último erro do Telegram: ${esc(t.ultimoErro)}</p>` : ''}
+    ${!cfg.dono ? '' : ligado ? `
+      <div class="acesso"><div class="acesso-titulo"><b>Quem pode falar</b><span>Só chats pareados são atendidos. Qualquer outro recebe "este bot é privado".</span></div>
+        <div class="acesso-lista">${(t.acessos || []).map((a) => `<span class="acesso-num">${esc(a.nome || a.identificador)}<button class="acesso-tirar" data-acao="tg-remover" data-chat="${esc(a.identificador)}" title="Tirar">${ic('fechar')}</button></span>`).join('') || '<span class="config-sutil">Ninguém pareado ainda.</span>'}</div>
+        ${tgCodigo ? `<p class="config-dica destaque">No Telegram de quem vai usar, abra <a href="${esc(tgCodigo.link)}" target="_blank" rel="noopener">${esc(tgCodigo.link)}</a> ou mande <code>/start ${esc(tgCodigo.codigo)}</code> pro bot. Vale por ${esc(tgCodigo.validoPor)}, pra uma pessoa.</p>` : ''}
+      </div>
+      <div class="config-botoes"><button class="botao-leve" data-acao="tg-codigo">${ic('mais')} Parear uma pessoa</button><button class="botao-leve" data-acao="tg-desligar">${ic('parar')} Desligar bot</button></div>`
+    : `<p class="config-dica">1. No Telegram, fale com o <a href="https://t.me/BotFather" target="_blank" rel="noopener">@BotFather</a>, mande <code>/newbot</code> e escolha nome e @ do bot.<br>2. Cole aqui o token que ele devolver.</p>
+      <div class="acesso-novo"><input id="tg-token" placeholder="123456789:AAE..." autocomplete="off" spellcheck="false"><button class="botao-leve" data-acao="tg-conectar">${ic('aviao')} Conectar bot</button></div>`}
+  </section>`;
+}
+
+// ---------- configurações: variáveis, ponte n8n, assinatura e conta ----------
+function cartoesConta(cfg, ass, vars) {
+  const sit = ass.situacao || {};
+  const [cls, rot] = STATUS_EMP[ass.empresa.status] || ['', ass.empresa.status];
+  const linhasCob = (ass.cobrancas || []).slice(0, 8).map((c) => {
+    const [cc, rc] = STATUS_COB[c.status] || ['', c.status];
+    return `<tr><td>${dataBr(c.vencimento)}</td><td>${c.tipo === 'setup' ? 'Setup' : c.tipo === 'mensalidade' ? 'Mensalidade' : 'Avulsa'}</td><td>${reais(c.valor_centavos)}</td><td><span class="pilula ${cc}">${rc}</span></td>
+      <td>${c.link_fatura && ['pendente', 'vencida', 'paga'].includes(c.status) ? `<a href="${esc(c.link_fatura)}" target="_blank" rel="noopener">${c.status === 'paga' ? 'Recibo' : 'Pagar'}</a>` : ''}</td></tr>`;
+  }).join('');
+  const variaveis = !cfg.dono ? '' : `
+    <section class="config-cartao">
+      <div class="config-cabeca"><span class="config-icone laranja">${ic('chave')}</span>
+        <div class="config-titulo"><b>Variáveis de ambiente</b><span>Chaves de API da sua empresa. Só os agentes do seu cérebro enxergam.</span></div></div>
+      <ul class="vars">${vars.map((v) => `<li><code>${esc(v.chave)}</code><span>${v.segredo ? '•••••• segredo' : esc(v.valor)}</span><button class="icone-botao" data-acao="var-remover" data-chave="${esc(v.chave)}" title="Remover">${ic('fechar')}</button></li>`).join('') || '<li class="config-sutil">Nenhuma variável ainda.</li>'}</ul>
+      <div class="var-nova"><input id="var-chave" placeholder="NOME_DA_VARIAVEL" autocomplete="off" spellcheck="false"><input id="var-valor" type="password" placeholder="valor" autocomplete="new-password">
+        <label class="acesso-voce"><input type="checkbox" id="var-segredo" checked> segredo</label><button class="botao-leve" data-acao="var-salvar">${ic('mais')} Salvar</button></div>
+      <p class="config-dica"><code>ANTHROPIC_API_KEY</code> ou <code>OPENAI_API_KEY</code> fazem o Claude Code ou o Codex usarem chave em vez do login da assinatura. <code>GROQ_API_KEY</code> transcreve os áudios na sua conta. O valor de um segredo nunca volta pra tela.</p>
+    </section>`;
+  const p = cfg.ponte || {};
+  const ponte = !cfg.dono ? '' : `
+    <section class="config-cartao">
+      <div class="config-cabeca"><span class="config-icone laranja">${ic('fluxo')}</span>
+        <div class="config-titulo"><b>Outros canais (n8n)</b><span>Google Chat, Slack e o que mais o seu n8n receber</span></div>
+        <span class="pilula ${p.ativo ? 'conectado' : ''}">${p.ativo ? 'Ligada' : 'Desligada'}</span></div>
+      ${p.ativo ? `<dl class="config-linhas"><div><dt>URL</dt><dd><code>${esc(cfg.ponteUrl)}</code></dd></div><div><dt>Cabeçalho</dt><dd><code>x-core-os-token: ${esc(p.token || '')}</code></dd></div></dl>` : ''}
+      <div class="acesso-novo"><input id="ponte-permitidos" placeholder="quem pode falar: voce@empresa.com, @empresa.com"><button class="botao-leve" data-acao="ponte-salvar">${p.ativo ? 'Salvar' : 'Ligar'}</button></div>
+      <p class="config-dica">Permitidos agora: ${esc((p.permitidos || []).join(', ') || 'ninguém')}. ${p.ativo ? '<a href="#" data-acao="ponte-desligar">Desligar</a>' : ''}</p>
+    </section>`;
+  return `${variaveis}${ponte}
+    <section class="config-cartao">
+      <div class="config-cabeca"><span class="config-icone verde">${ic('cartao')}</span>
+        <div class="config-titulo"><b>Assinatura EGI Brand</b><span>Mensalidade de ${reais(ass.empresa.valor_mensal_centavos)}${ass.empresa.dia_vencimento ? `, todo dia ${ass.empresa.dia_vencimento}` : ''}</span></div>
+        <span class="pilula ${cls}">${esc(rot)}</span></div>
+      ${sit.vencida ? `<p class="config-dica alerta">A mensalidade de ${dataBr(sit.vencida.vencimento)} está em aberto. Pague até <b>${dataBr(sit.suspendeEm)}</b> pra não ter o acesso suspenso. ${sit.vencida.link_fatura ? `<a href="${esc(sit.vencida.link_fatura)}" target="_blank" rel="noopener">Pagar agora</a>` : ''}</p>` : ''}
+      ${sit.proxima ? `<dl class="config-linhas"><div><dt>Próxima cobrança</dt><dd>${reais(sit.proxima.valor_centavos)} em ${dataBr(sit.proxima.vencimento)}</dd></div></dl>` : ''}
+      ${linhasCob ? `<table class="tabela-cob"><thead><tr><th>Vencimento</th><th>O quê</th><th>Valor</th><th>Situação</th><th></th></tr></thead><tbody>${linhasCob}</tbody></table>` : ''}
+      <p class="config-dica">A cobrança é feita pelo Asaas. Sem pagamento em ${sit.diasSuspensao || 5} dias depois do vencimento, o acesso fica suspenso até a confirmação.</p>
+    </section>
+    <section class="config-cartao">
+      <div class="config-cabeca"><span class="config-icone azul">${ic('cadeado')}</span>
+        <div class="config-titulo"><b>Sua conta</b><span>Trocar a senha de acesso ao painel</span></div></div>
+      <div class="var-nova"><input id="senha-atual" type="password" placeholder="senha atual" autocomplete="current-password"><input id="senha-nova" type="password" placeholder="nova (10+ letras e números)" autocomplete="new-password"><button class="botao-leve" data-acao="senha-trocar">Trocar senha</button></div>
+    </section>
+    <p class="assinatura-egi">EGI Brand · por <b>EGI Group</b></p>`;
+}
+
+// ---------- folha Marca ----------
+const Marca = { categoria: null };
+const DESCR_MARCA = {
+  brandbook: 'O manual da marca em PDF. O cérebro lê antes de criar qualquer peça.',
+  logo: 'Versões do logo (SVG ou PNG com fundo transparente): principal, negativa, símbolo.',
+  fonte: 'Arquivos das fontes da marca (TTF, OTF, WOFF).',
+  imagem: 'Fotos, texturas e referências visuais da marca.',
+  outro: 'Qualquer outro material de apoio (apresentações, guias, documentos).',
+};
+const ICONE_MARCA = { brandbook: 'doc', logo: 'paleta', fonte: 'texto', imagem: 'imagem', outro: 'pasta' };
+const linhaCor = (c = {}) => `<div class="cor-linha"><input type="color" value="${esc(c.hex || '#0f766e')}"><input class="cor-nome" placeholder="Nome (ex.: Primária)" value="${esc(c.nome || '')}"><button class="icone-botao" data-acao="marca-cor-tirar" title="Tirar">${ic('fechar')}</button></div>`;
+async function abrirMarca() { $('#folha-marca').hidden = false; pintarDock(); await pintarMarca(); }
+function fecharMarca() { $('#folha-marca').hidden = true; pintarDock(); }
+async function pintarMarca() {
+  const d = await api('/api/marca');
+  const p = d.perfil;
+  const cartao = ([cat, c]) => {
+    const itens = d.arquivos.filter((a) => a.categoria === cat);
+    return `<section class="config-cartao">
+      <div class="config-cabeca"><span class="config-icone ${cat === 'brandbook' ? 'verde' : 'azul'}">${ic(ICONE_MARCA[cat])}</span>
+        <div class="config-titulo"><b>${esc(c.rotulo)}</b><span>${esc(DESCR_MARCA[cat])}</span></div>
+        <button class="botao-leve" data-acao="marca-enviar" data-categoria="${cat}" data-aceita="${c.ext.map((x) => `.${x}`).join(',')}">${ic('enviar')} Enviar</button></div>
+      <ul class="marca-lista">${itens.map((a) => `<li>${/\.(png|jpe?g|webp|gif|svg)$/i.test(a.caminho) ? `<img src="${url(a.caminho)}" alt="" loading="lazy">` : `<span class="marca-tipo">${esc(a.caminho.split('.').pop().toUpperCase())}</span>`}
+        <span class="marca-nome"><a href="${url(a.caminho)}" target="_blank" rel="noopener">${esc(a.nome_original)}</a><small>${tamanhoBonito(Number(a.tamanho))} · ${dataBonita(Date.parse(a.criado_em))}</small></span>
+        <button class="icone-botao" data-acao="marca-remover" data-id="${a.id}" title="Tirar">${ic('fechar')}</button></li>`).join('') || `<li class="config-sutil">${cat === 'brandbook' ? 'Envie o brandbook em PDF: é o que mais ajuda o cérebro a acertar o tom e o visual.' : 'Nada enviado ainda.'}</li>`}</ul>
+    </section>`;
+  };
+  $('#marca-corpo').innerHTML = `
+    ${Object.entries(d.categorias).map(cartao).join('')}
+    <section class="config-cartao">
+      <div class="config-cabeca"><span class="config-icone laranja">${ic('paleta')}</span>
+        <div class="config-titulo"><b>Identidade</b><span>Cores, fontes e o jeito de falar. Vira regra pra tudo que o cérebro criar.</span></div></div>
+      <label class="campo"><span>Slogan</span><input id="m-slogan" maxlength="200" value="${esc(p.slogan)}"></label>
+      <label class="campo"><span>Pra quem a marca fala</span><textarea id="m-publico" rows="2" maxlength="2000">${esc(p.publico)}</textarea></label>
+      <div class="campo"><span>Cores</span><div id="m-cores">${(p.cores || []).map(linhaCor).join('')}</div><button class="botao-leve" data-acao="marca-cor-mais">${ic('mais')} Cor</button></div>
+      <label class="campo"><span>Fontes (separe por vírgula)</span><input id="m-fontes" value="${esc((p.fontes || []).join(', '))}"></label>
+      <label class="campo"><span>Tom de voz</span><textarea id="m-tom" rows="5" maxlength="4000" placeholder="Ex.: próximo e direto, sem gírias, frases curtas, sempre com uma chamada pra ação.">${esc(p.tom_de_voz)}</textarea></label>
+      <div class="config-botoes"><button class="botao-primario" data-acao="marca-salvar">Salvar identidade</button></div>
+      <p class="config-dica">Tudo fica em <code>marca/</code> dentro do seu cérebro, com um índice (<code>marca/CLAUDE.md</code>) que o Claude Code, o Codex e o Antigravity leem antes de criar qualquer peça.</p>
+    </section>
+    <p class="assinatura-egi">EGI Brand · por <b>EGI Group</b></p>`;
+}
+async function enviarMarca(arquivos) {
+  const botao = $(`[data-acao="marca-enviar"][data-categoria="${Marca.categoria}"]`);
+  if (botao) { botao.disabled = true; botao.textContent = 'Enviando...'; }
+  for (const f of arquivos) {
+    const r = await fetch(`/api/marca/arquivos?categoria=${encodeURIComponent(Marca.categoria)}&nome=${encodeURIComponent(f.name)}`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: f });
+    if (!r.ok) alert(`${f.name}: ${(await r.json().catch(() => ({}))).erro || 'não enviou.'}`);
+  }
+  await pintarMarca();
+}
+$('#entrada-marca').addEventListener('change', (e) => { const lista = [...e.target.files]; e.target.value = ''; if (lista.length) enviarMarca(lista); });
+async function salvarPerfilMarca(botao) {
+  botao.disabled = true;
+  const cores = [...document.querySelectorAll('#m-cores .cor-linha')].map((l) => ({ hex: l.querySelector('input[type=color]').value, nome: l.querySelector('.cor-nome').value }));
+  try {
+    await api('/api/marca/perfil', { method: 'PUT', body: JSON.stringify({ slogan: $('#m-slogan').value, publico: $('#m-publico').value, tom_de_voz: $('#m-tom').value, fontes: $('#m-fontes').value.split(',').map((x) => x.trim()).filter(Boolean), cores }) });
+    botao.textContent = 'Salvo ✓'; setTimeout(() => pintarMarca(), 900);
+  } catch (e) { alert(e.message); botao.disabled = false; }
+}
+
+document.addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-acao]');
+  if (!b) return;
+  const a = b.dataset.acao;
+  const tentar = async (fn) => { try { await fn(); } catch (err) { if (!['login', 'bloqueio'].includes(err.message)) alert(err.message); } };
+  if (a === 'marca') abrirMarca();
+  if (a === 'fechar-marca') fecharMarca();
+  if (a === 'marca-enviar') { Marca.categoria = b.dataset.categoria; const inp = $('#entrada-marca'); inp.accept = b.dataset.aceita; inp.multiple = b.dataset.categoria !== 'brandbook'; inp.click(); }
+  if (a === 'marca-remover' && confirm('Tirar este arquivo da marca? Ele vai pra marca/.arquivo, não é apagado.')) tentar(async () => { await api(`/api/marca/arquivos/${b.dataset.id}`, { method: 'DELETE' }); await pintarMarca(); });
+  if (a === 'marca-salvar') salvarPerfilMarca(b);
+  if (a === 'marca-cor-mais') $('#m-cores').insertAdjacentHTML('beforeend', linhaCor());
+  if (a === 'marca-cor-tirar') b.closest('.cor-linha')?.remove();
+  if (a === 'tg-conectar') { b.disabled = true; await tentar(async () => { await api('/api/config/telegram', { method: 'POST', body: JSON.stringify({ token: $('#tg-token').value }) }); $('#tg-token').value = ''; await pintarConfig(); }); b.disabled = false; }
+  if (a === 'tg-desligar' && confirm('Desligar o bot do Telegram? Os chats pareados param de ser atendidos.')) tentar(async () => { await api('/api/config/telegram', { method: 'DELETE' }); tgCodigo = null; await pintarConfig(); });
+  if (a === 'tg-codigo') tentar(async () => { tgCodigo = await api('/api/config/telegram/codigo', { method: 'POST' }); await pintarConfig(); });
+  if (a === 'tg-remover') tentar(async () => { await api(`/api/config/telegram/acesso/${encodeURIComponent(b.dataset.chat)}`, { method: 'DELETE' }); await pintarConfig(); });
+  if (a === 'var-salvar') tentar(async () => {
+    const chave = $('#var-chave').value.trim().toUpperCase();
+    if (!chave) { $('#var-chave').focus(); return; }
+    await api(`/api/config/variaveis/${encodeURIComponent(chave)}`, { method: 'PUT', body: JSON.stringify({ valor: $('#var-valor').value, segredo: $('#var-segredo').checked }) });
+    $('#var-chave').value = ''; $('#var-valor').value = ''; await pintarConfig();
+  });
+  if (a === 'var-remover' && confirm(`Remover a variável ${b.dataset.chave}?`)) tentar(async () => { await api(`/api/config/variaveis/${encodeURIComponent(b.dataset.chave)}`, { method: 'DELETE' }); await pintarConfig(); });
+  if (a === 'ponte-salvar' || a === 'ponte-desligar') {
+    e.preventDefault();
+    tentar(async () => {
+      const permitidos = a === 'ponte-desligar' ? [] : $('#ponte-permitidos').value.split(',').map((x) => x.trim()).filter(Boolean);
+      await api('/api/config/ponte', { method: 'POST', body: JSON.stringify({ ativo: a !== 'ponte-desligar', permitidos }) });
+      $('#ponte-permitidos').value = ''; await pintarConfig();
+    });
+  }
+  if (a === 'senha-trocar') tentar(async () => {
+    await api('/api/conta/senha', { method: 'POST', body: JSON.stringify({ atual: $('#senha-atual').value, nova: $('#senha-nova').value }) });
+    $('#senha-atual').value = ''; $('#senha-nova').value = ''; alert('Senha trocada.');
+  });
+  if (a === 'bloqueio-recarregar') location.reload();
+  if (a === 'sair-suporte') { await fetch('/api/admin/sair-da-empresa', { method: 'POST' }); location.href = '/admin'; }
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('#folha-marca').hidden) fecharMarca(); });
+
 // ---------- início ----------
 async function iniciar() {
   $('#app').hidden = false;
   document.querySelector('[data-acao="recarregar-arvore"]').innerHTML = ic('recarregar');
   document.querySelector('.conversas-topo [data-acao="nova-conversa"]').innerHTML = ic('mais');
-  document.querySelectorAll('.folha-topo .icone-botao').forEach((b) => { b.innerHTML = ic('fechar'); });
+  document.querySelectorAll('.folha-topo > .icone-botao, .folha-acoes .icone-botao').forEach((b) => { b.innerHTML = ic('fechar'); });
   $('[data-acao="conteudos-voltar"]').innerHTML = ic('voltar');
   $('.visor-acoes [data-acao="fechar-visor"]').innerHTML = ic('fechar');
   $('.visor-nav.ant').innerHTML = ic('voltar'); $('.visor-nav.prox').innerHTML = ic('seta');
@@ -1057,4 +1254,4 @@ async function carregarArvoreSeMudou() {
 // PWA: instala no celular/computador e abre em tela cheia
 if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
 
-fetch('/api/eu').then((r) => r.json()).then((r) => (r.logado ? iniciar() : mostrarLogin()));
+comecar();

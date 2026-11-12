@@ -69,7 +69,7 @@ export function criarPlataforma({ cfg, db, fetch: f = fetch, log = console.log }
   app.use('/vendor/xterm-fit', express.static(vendor('@xterm/addon-fit')));
   app.use('/vendor/marked', express.static(vendor('marked')));
   app.use('/vendor/xterm-unicode', express.static(vendor('@xterm/addon-unicode11')));
-  app.get(['/admin', '/admin/'], (req, res) => res.sendFile(path.join(PUBLICO, 'admin', 'index.html')));
+  app.get(['/admin', '/admin/'], (req, res) => res.sendFile('admin/index.html', { root: PUBLICO }));
   app.use(express.static(PUBLICO, { setHeaders: (res, arq) => { if (/(sw\.js|manifest\.webmanifest)$/.test(arq)) res.set('Cache-Control', 'no-cache'); } }));
 
   // erros: status do erro (400, 404...) ou 500 sem vazar detalhe interno
