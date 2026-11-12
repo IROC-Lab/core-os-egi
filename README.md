@@ -32,7 +32,7 @@ Arquitetura, modelo de dados e regras de cobrança: [`docs/arquitetura-multitena
 | `n8n/` | Fluxos do Google Chat por empresa (`preparar.sh`) |
 
 ## Instalação no Coolify (recurso NOVO)
-> Este repositório também é o Core OS interno da EGI (`cerebro.appegi.com.br`, branch `main`). **Não** troque o recurso atual: suba o EGI Brand como recurso novo, a partir da branch desta versão.
+> Repositório próprio do EGI Brand (`IROC-Lab/egi-brand`), separado do Core OS interno da EGI (`IROC-Lab/core-os-egi`, que segue em `cerebro.appegi.com.br`). Suba como recurso **novo** no Coolify, a partir da `main` deste repositório; não mexa no recurso do Core OS.
 
 1. **DNS**: registro A `brand.appegi.com.br` (ou o nome que preferir) apontando pro servidor do Coolify.
 2. **Segredos** (gere e guarde num cofre):
@@ -41,7 +41,7 @@ Arquitetura, modelo de dados e regras de cobrança: [`docs/arquitetura-multitena
    openssl rand -hex 24   # BANCO_SENHA
    openssl rand -hex 24   # ASAAS_WEBHOOK_TOKEN
    ```
-3. **Coolify** › New Resource › Docker Compose › este repositório, branch do EGI Brand, `docker-compose.yml`. Variáveis conforme `.env.example`. Domínio `https://brand.appegi.com.br` no serviço `egi-brand`, porta **3000**. Deploy.
+3. **Coolify** › New Resource › Docker Compose › `IROC-Lab/egi-brand`, branch `main`, `docker-compose.yml`. Variáveis conforme `.env.example`. Domínio `https://brand.appegi.com.br` no serviço `egi-brand`, porta **3000**. Deploy.
    O compose traz um **Postgres próprio** (`banco`), então nenhum banco compartilhado é tocado. A migração roda sozinha na subida (schema `egi_brand`).
 4. **Asaas** (comece no sandbox): Integrações › Webhooks › novo webhook
    - URL `https://brand.appegi.com.br/hooks/asaas`, token de autenticação = `ASAAS_WEBHOOK_TOKEN`, API v3;
@@ -80,4 +80,4 @@ Na primeira vez, o `pnpm dev` cria `painel/.env.local` (fora do Git) com a chave
 ## Operação
 - **Backup**: volume `egi-brand-dados` (cérebros, logins e `.env` de todas as empresas) e `egi-brand-banco`. Sem a `EGI_MASTER_KEY` o backup do banco não decifra as variáveis.
 - **Logs**: Coolify › Logs. Prefixos: `[cobrança]`, `[asaas]`, `[avisos]`, `[whatsapp]`, `[telegram]`, `[empresa]`.
-- **Atualizar**: push na branch do recurso › Redeploy. Skills e agentes novos do modelo entram nos cérebros existentes sem sobrescrever nada.
+- **Atualizar**: push na `main` › Redeploy no Coolify. Skills e agentes novos do modelo entram nos cérebros existentes sem sobrescrever nada.
