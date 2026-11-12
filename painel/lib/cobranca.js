@@ -74,11 +74,11 @@ export function criarCobranca({ db, cfg, asaas, empresas, avisos, aoMudarStatus 
     let e = await empresas.buscar(empresaId);
     if (!e) throw Object.assign(new Error('Empresa não encontrada.'), { status: 404 });
     if (e.status !== 'aguardando_setup') throw Object.assign(new Error(`A empresa já está "${e.status}".`), { status: 409 });
-    await garantirClienteAsaas(e);
     if (!cobrarSetup || !e.valor_setup_centavos) {
       e = await ativar(e, { por });
       return { empresa: e, setup: null };
     }
+    await garantirClienteAsaas(e);
     const aberta = await db.um("select * from cobrancas where empresa_id = $1 and tipo = 'setup' and status in ('pendente','vencida') order by criado_em desc limit 1", [e.id]);
     if (aberta) return { empresa: e, setup: aberta };
     const p = normalizarPagamento(await asaas.criarCobranca({
@@ -93,6 +93,12 @@ export function criarCobranca({ db, cfg, asaas, empresas, avisos, aoMudarStatus 
 
   // 2. setup pago (ou dispensado): ativa e cria a assinatura mensal
   async function ativar(e, { por = null } = {}) {
+    // sem Asaas configurado (teste local, ou cortesia antes de ligar a cobrança): libera sem criar assinatura
+    if (!e.asaas_assinatura_id && !asaas.configurado) {
+      log(`[cobrança] ${e.slug}: ativada SEM assinatura (ASAAS_API_KEY vazia)`);
+      await empresas.auditar(e.id, por, 'cobranca.ativada_sem_asaas', {});
+      return mudarStatus(e, 'ativa', null, por);
+    }
     if (!e.asaas_assinatura_id) {
       await garantirClienteAsaas(e);
       const venc = primeiroVencimento(dia(), e.dia_vencimento);

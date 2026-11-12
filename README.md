@@ -70,11 +70,12 @@ Arquitetura, modelo de dados e regras de cobrança: [`docs/arquitetura-multitena
 
 ## Desenvolvimento
 ```bash
-cd painel && npm install && npm test        # 15 testes de ponta a ponta, sem banco externo
-DATABASE_URL=pglite:./tmp-banco EGI_MASTER_KEY=$(openssl rand -hex 32) EGI_PUBLIC_URL=http://localhost:3000 \
-EGI_ADMIN_EMAIL=voce@exemplo.com EGI_ADMIN_SENHA=TroqueEssa123 EGI_EMPRESAS_DIR=./tmp-empresas \
-EGI_MODELO_CEREBRO=../cerebro node server.js  # roda local com PGlite (fora de root: sem isolamento por usuário)
+cd painel
+pnpm install      # pnpm 10 (o node-pty já está liberado em "onlyBuiltDependencies")
+pnpm test         # 15 testes de ponta a ponta, sem banco externo
+pnpm dev          # http://localhost:3000 (cliente) e http://localhost:3000/admin
 ```
+Na primeira vez, o `pnpm dev` cria `painel/.env.local` (fora do Git) com a chave mestra e o admin de teste (`admin@egi.local`, senha no arquivo). O banco é PGlite em `painel/.dev/` (apague a pasta pra começar do zero). Sem `ASAAS_API_KEY`, cadastre a empresa sem "Cobrar o setup" (ou use "Ativar sem setup"): ela entra ativa, sem assinatura. Com a chave sandbox, a cobrança sai de verdade, mas o webhook não alcança o localhost (use "Sincronizar com o Asaas"). Local, fora de root, todas as empresas rodam com o seu usuário do Mac (sem o isolamento por uid da produção). O Docker continua usando npm (`package-lock.json`).
 
 ## Operação
 - **Backup**: volume `egi-brand-dados` (cérebros, logins e `.env` de todas as empresas) e `egi-brand-banco`. Sem a `EGI_MASTER_KEY` o backup do banco não decifra as variáveis.

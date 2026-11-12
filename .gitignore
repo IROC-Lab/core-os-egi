@@ -3,5 +3,7 @@ painel/node_modules/
 painel/data/
 n8n/pronto/
 .env
+.env.local
+painel/.dev/
 *.log
 .DS_Store
